@@ -73,7 +73,8 @@
         </div>
       </div>
       <div class="flex items-center space-x-3">
-        <button onclick="openModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow">
+        <!-- TRIGGER BUTTON -->
+        <button id="openModalBtn" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow cursor-pointer">
           <i class="fa-solid fa-plus"></i>
           <span>List Item</span>
         </button>
@@ -154,7 +155,7 @@
   </main>
 
   <!-- Floating Mobile "Sell Item" Action Button -->
-  <button onclick="openModal()" class="md:hidden fixed bottom-5 right-5 bg-emerald-600 text-white font-bold px-4 py-3.5 rounded-full shadow-2xl flex items-center space-x-2 z-30 active:scale-95 transition">
+  <button id="floatingModalBtn" type="button" class="md:hidden fixed bottom-5 right-5 bg-emerald-600 text-white font-bold px-4 py-3.5 rounded-full shadow-2xl flex items-center space-x-2 z-30 active:scale-95 transition cursor-pointer">
     <i class="fa-solid fa-camera text-lg"></i>
     <span>Sell Item</span>
   </button>
@@ -166,11 +167,11 @@
       <!-- Modal Header -->
       <div class="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
         <h3 class="font-bold text-lg"><i class="fa-solid fa-tag mr-2"></i>Post an Item for Sale</h3>
-        <button onclick="closeModal()" class="text-emerald-100 hover:text-white text-xl font-bold">&times;</button>
+        <button id="closeModalBtn" type="button" class="text-emerald-100 hover:text-white text-2xl font-bold cursor-pointer">&times;</button>
       </div>
 
       <!-- Modal Form Body -->
-      <form id="itemForm" onsubmit="handleItemSubmit(event)" class="p-6 overflow-y-auto space-y-4 text-sm flex-1">
+      <form id="itemForm" class="p-6 overflow-y-auto space-y-4 text-sm flex-1">
         
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Item Title *</label>
@@ -203,15 +204,14 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Photo URL or Preset Photo *</label>
+          <label class="block font-semibold text-slate-700 mb-1">Photo URL *</label>
           <input type="url" id="itemPhoto" required placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          <p class="text-[11px] text-slate-500 mt-1">Paste any image link or tap a quick sample image below:</p>
+          <p class="text-[11px] text-slate-500 mt-1">Paste an image URL or tap a sample photo below:</p>
           
-          <!-- Sample Photo Chips for Quick Testing -->
           <div class="flex gap-2 mt-2">
-            <button type="button" onclick="setSamplePhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
-            <button type="button" onclick="setSamplePhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
-            <button type="button" onclick="setSamplePhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
+            <button type="button" class="sample-photo-btn text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 cursor-pointer" data-url="https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80">Tool Box</button>
+            <button type="button" class="sample-photo-btn text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 cursor-pointer" data-url="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80">Chair</button>
+            <button type="button" class="sample-photo-btn text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 cursor-pointer" data-url="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80">Bicycle</button>
           </div>
         </div>
 
@@ -220,7 +220,7 @@
           <textarea id="itemDesc" rows="2" placeholder="Describe condition, dimensions, or reasons for selling..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
         </div>
 
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow mt-2">
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow mt-2 cursor-pointer">
           Publish Listing to YardSale Hub
         </button>
       </form>
@@ -236,7 +236,7 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
+  <!-- Application Logic -->
   <script>
     let bundle = [];
 
@@ -257,65 +257,77 @@
       }
     });
 
-    // Modal Controls
-    function openModal() {
-      document.getElementById('sellerModal').classList.remove('hidden');
-    }
+    // DOM Modal Logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('sellerModal');
+      const openBtn = document.getElementById('openModalBtn');
+      const floatBtn = document.getElementById('floatingModalBtn');
+      const closeBtn = document.getElementById('closeModalBtn');
+      const itemForm = document.getElementById('itemForm');
 
-    function closeModal() {
-      document.getElementById('sellerModal').classList.add('hidden');
-    }
+      const showModal = () => modal.classList.remove('hidden');
+      const hideModal = () => modal.classList.add('hidden');
 
-    function setSamplePhoto(url) {
-      document.getElementById('itemPhoto').value = url;
-    }
+      if (openBtn) openBtn.addEventListener('click', showModal);
+      if (floatBtn) floatBtn.addEventListener('click', showModal);
+      if (closeBtn) closeBtn.addEventListener('click', hideModal);
 
-    // Dynamic Item Submission Handler
-    function handleItemSubmit(e) {
-      e.preventDefault();
+      // Close modal when clicking dark overlay outside form
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) hideModal();
+      });
 
-      const title = document.getElementById('itemTitle').value;
-      const price = document.getElementById('itemPrice').value;
-      const location = document.getElementById('itemLocation').value;
-      const pickup = document.getElementById('pickupType').value;
-      const photo = document.getElementById('itemPhoto').value;
-      const desc = document.getElementById('itemDesc').value || 'Available for immediate local pickup.';
+      // Preset photo buttons
+      document.querySelectorAll('.sample-photo-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.getElementById('itemPhoto').value = e.target.getAttribute('data-url');
+        });
+      });
 
-      // Create New Card HTML
-      const newCard = document.createElement('div');
-      newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
-      newCard.innerHTML = `
-        <div class="relative h-48 bg-slate-100">
-          <img src="${photo}" alt="${title}" class="w-full h-full object-cover">
-          <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${location} • ${pickup}</span>
-          <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${price}</span>
-          <span class="absolute bottom-3 left-3 bg-amber-400 text-slate-900 font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shadow">Just Listed</span>
-        </div>
-        <div class="p-5">
-          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <span>Neighborhood Host Sale</span>
-            <span>0.5 miles away</span>
+      // Submit new item listing
+      itemForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById('itemTitle').value;
+        const price = document.getElementById('itemPrice').value;
+        const location = document.getElementById('itemLocation').value;
+        const pickup = document.getElementById('pickupType').value;
+        const photo = document.getElementById('itemPhoto').value;
+        const desc = document.getElementById('itemDesc').value || 'Available for immediate local pickup.';
+
+        const newCard = document.createElement('div');
+        newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
+        newCard.innerHTML = `
+          <div class="relative h-48 bg-slate-100">
+            <img src="${photo}" alt="${title}" class="w-full h-full object-cover">
+            <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${location} • ${pickup}</span>
+            <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${price}</span>
+            <span class="absolute bottom-3 left-3 bg-amber-400 text-slate-900 font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shadow">Just Listed</span>
           </div>
-          <h3 class="font-bold text-slate-900 text-lg mb-2">${title}</h3>
-          <p class="text-slate-600 text-sm line-clamp-2 mb-4">${desc}</p>
-          <button onclick="addToBundle('${title}', ${price}, '${location}')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
-            <i class="fa-solid fa-plus text-xs"></i>
-            <span>Add to Bundle Offer</span>
-          </button>
-        </div>
-      `;
+          <div class="p-5">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+              <span>Neighborhood Host Sale</span>
+              <span>0.5 miles away</span>
+            </div>
+            <h3 class="font-bold text-slate-900 text-lg mb-2">${title}</h3>
+            <p class="text-slate-600 text-sm line-clamp-2 mb-4">${desc}</p>
+            <button onclick="addToBundle('${title}', ${price}, '${location}')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>Add to Bundle Offer</span>
+            </button>
+          </div>
+        `;
 
-      // Insert at top of grid
-      const grid = document.getElementById('itemsGrid');
-      grid.insertBefore(newCard, grid.firstChild);
+        const grid = document.getElementById('itemsGrid');
+        grid.insertBefore(newCard, grid.firstChild);
 
-      // Reset form and close modal
-      document.getElementById('itemForm').reset();
-      closeModal();
-      alert('Your item has been published to the neighborhood marketplace!');
-    }
+        itemForm.reset();
+        hideModal();
+        alert('Your item has been published to the neighborhood marketplace!');
+      });
+    });
 
-    // PWA Install Setup
+    // PWA Service Worker
     let deferredPrompt;
     const pwaBanner = document.getElementById('pwaBanner');
     const installPwaBtn = document.getElementById('installPwaBtn');
@@ -326,17 +338,19 @@
       pwaBanner.classList.remove('hidden');
     });
 
-    installPwaBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          console.log('User accepted PWA install');
+    if (installPwaBtn) {
+      installPwaBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            console.log('PWA installed');
+          }
+          deferredPrompt = null;
+          pwaBanner.classList.add('hidden');
         }
-        deferredPrompt = null;
-        pwaBanner.classList.add('hidden');
-      }
-    });
+      });
+    }
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
