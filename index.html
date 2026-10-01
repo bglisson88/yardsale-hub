@@ -3,1177 +3,1142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YardSale Hub - Local Marketplace & Map</title>
+    <title>YardSale Hub - Local Neighborhood Marketplace</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet CSS & JS for OpenStreetMap -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Google Font - Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        emerald: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                            800: '#065f46',
-                            900: '#064e3b',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Leaflet JS & CSS for OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        #leaflet-map { height: 100%; width: 100%; min-height: 400px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .pulse-badge {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-        #map-container {
-            height: calc(100vh - 180px);
-            min-height: 450px;
-            width: 100%;
-            border-radius: 0.75rem;
-            z-index: 10;
-        }
-        .leaflet-popup-content-wrapper {
-            border-radius: 0.75rem;
-            padding: 4px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-        }
-        .leaflet-popup-content {
-            margin: 8px 12px;
-            line-height: 1.4;
-        }
-        .custom-map-pin {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #059669;
-            color: white;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 20px;
-            border: 2px solid white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-            white-space: nowrap;
-            font-size: 13px;
-        }
-        .custom-map-pin::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 6px 6px 0;
-            border-style: solid;
-            border-color: #059669 transparent;
-            display: block;
-            width: 0;
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .7; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
-    <!-- TOP NAVIGATION HEADER -->
-    <header class="bg-emerald-700 text-white sticky top-0 z-40 shadow-md">
+    <!-- Top Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 gap-4">
-                
-                <!-- Logo & Brand -->
-                <div class="flex items-center gap-2 cursor-pointer" onclick="resetFilters()">
-                    <div class="bg-white text-emerald-700 p-2 rounded-xl font-black text-xl shadow-inner flex items-center justify-center h-10 w-10">
-                        <i class="fa-solid fa-shop"></i>
+            <div class="flex justify-between items-center h-16">
+                <!-- Brand / Logo -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('feed')">
+                    <div class="bg-emerald-600 text-white p-2 rounded-xl shadow-md">
+                        <i class="fa-solid font-bold fa-house-signal text-xl"></i>
                     </div>
-                    <span class="font-bold text-xl tracking-tight hidden sm:inline-block">YardSale<span class="text-emerald-200">Hub</span></span>
+                    <div>
+                        <span class="text-xl font-extrabold text-slate-900 tracking-tight">YardSale<span class="text-emerald-600">Hub</span></span>
+                        <span class="hidden sm:inline-block text-xs text-slate-500 font-medium ml-2 bg-slate-100 px-2 py-0.5 rounded-full">SE Texas Local</span>
+                    </div>
                 </div>
 
-                <!-- Desktop Search Bar -->
-                <div class="flex-1 max-w-xl hidden md:block">
+                <!-- Search Input -->
+                <div class="flex-1 max-w-lg mx-4 hidden md:block">
                     <div class="relative">
-                        <input type="text" id="desktopSearchInput" placeholder="Search yard sales, tools, furniture, electronics..." 
-                            class="w-full pl-10 pr-4 py-2 rounded-full text-slate-800 bg-white border-0 focus:outline-none focus:ring-2 focus:ring-emerald-300 text-sm shadow-sm"
-                            onkeyup="handleSearch(event)">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400"></i>
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" oninput="renderApp()" placeholder="Search local tools, furniture, electronics..." class="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
                     </div>
                 </div>
 
-                <!-- View Toggle Buttons & Navigation -->
+                <!-- Action Navigation -->
                 <div class="flex items-center gap-2 sm:gap-3">
-                    
-                    <!-- View Toggle -->
-                    <div class="bg-emerald-800 p-1 rounded-lg flex items-center text-xs font-semibold">
-                        <button id="btnGridView" onclick="switchView('grid')" class="px-3 py-1.5 rounded-md bg-white text-emerald-800 shadow transition-all">
-                            <i class="fa-solid fa-grid-2 mr-1.5"></i>Grid
-                        </button>
-                        <button id="btnMapView" onclick="switchView('map')" class="px-3 py-1.5 rounded-md text-emerald-100 hover:text-white transition-all">
-                            <i class="fa-solid fa-map-location-dot mr-1.5"></i>Map
-                        </button>
-                    </div>
-
-                    <!-- Inbox Button -->
-                    <button onclick="openInboxModal()" class="relative p-2 text-emerald-100 hover:text-white rounded-lg hover:bg-emerald-600 transition" title="Messages & Offers">
-                        <i class="fa-solid fa-comments text-xl"></i>
-                        <span id="unreadBadge" class="absolute top-1 right-1 bg-amber-400 text-slate-900 text-xs font-black w-4 h-4 rounded-full flex items-center justify-center text-[10px] hidden">0</span>
+                    <button onclick="switchTab('feed')" id="nav-feed" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                        <i class="fa-solid fa-store mr-1.5"></i>Feed
                     </button>
-
-                    <!-- User Profile / Seller Dashboard Toggle -->
-                    <button onclick="openUserModal()" class="flex items-center gap-2 bg-emerald-800 hover:bg-emerald-900 px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-50 transition border border-emerald-600">
-                        <i class="fa-solid fa-circle-user text-base text-emerald-300"></i>
-                        <span id="navUserName" class="hidden sm:inline">My Account</span>
+                    <button onclick="switchTab('map')" id="nav-map" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-map-location-dot mr-1.5"></i>Map
+                    </button>
+                    <button onclick="switchTab('favorites')" id="nav-favorites" class="nav-btn relative px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-heart text-rose-500 mr-1.5"></i>Favorites
+                        <span id="favCountBadge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button onclick="switchTab('messages')" id="nav-messages" class="nav-btn relative px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-comments text-sky-500 mr-1.5"></i>Chat
+                        <span id="unreadChatBadge" class="hidden absolute -top-1 -right-1 bg-sky-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-user-gear mr-1.5"></i>Dashboard
                     </button>
 
                     <!-- Sell Button -->
-                    <button onclick="openPostItemModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2 rounded-lg text-sm shadow-md hover:shadow-lg transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle-plus"></i>
-                        <span class="hidden sm:inline">Sell Item</span>
+                    <button onclick="openPostModal()" class="ml-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="hidden sm:inline">List Item</span>
                     </button>
                 </div>
             </div>
-
+            
             <!-- Mobile Search Bar -->
             <div class="pb-3 md:hidden">
                 <div class="relative">
-                    <input type="text" id="mobileSearchInput" placeholder="Search items in Nederland, Groves..." 
-                        class="w-full pl-9 pr-4 py-2 rounded-lg text-slate-800 bg-white border-0 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 shadow-sm"
-                        onkeyup="handleSearch(event)">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="mobileSearchInput" oninput="syncMobileSearch(this.value)" placeholder="Search items nearby..." class="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- CATEGORY & LOCALITY FILTER BAR -->
-    <div class="bg-white border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
-            
-            <!-- Category Pills -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none max-w-full">
-                <button onclick="filterCategory('All')" class="cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-emerald-100 text-emerald-800 border border-emerald-300" data-cat="All">
-                    All Items
-                </button>
-                <button onclick="filterCategory('Furniture')" class="cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Furniture">
-                    <i class="fa-solid fa-couch mr-1"></i>Furniture
-                </button>
-                <button onclick="filterCategory('Electronics')" class="cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Electronics">
-                    <i class="fa-solid fa-plug mr-1"></i>Electronics
-                </button>
-                <button onclick="filterCategory('Tools & Lawn')" class="cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Tools & Lawn">
-                    <i class="fa-solid fa-screwdriver-wrench mr-1"></i>Tools & Lawn
-                </button>
-                <button onclick="filterCategory('Apparel')" class="cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Apparel">
-                    <i class="fa-solid fa-shirt mr-1"></i>Apparel
+    <!-- Secondary Bar: Filter Controls -->
+    <div id="filterBar" class="bg-white border-b border-slate-200 py-3 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Neighborhood Select -->
+                <div class="flex items-center bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200">
+                    <i class="fa-solid fa-location-dot text-emerald-600 mr-2"></i>
+                    <select id="filterNeighborhood" onchange="renderApp()" class="bg-transparent border-none text-slate-700 font-medium text-xs sm:text-sm focus:outline-none cursor-pointer">
+                        <option value="ALL">All Neighborhoods (SE Texas)</option>
+                        <option value="Nederland">Nederland</option>
+                        <option value="Groves">Groves</option>
+                        <option value="West Beaumont">West Beaumont</option>
+                        <option value="Orange County">Orange County</option>
+                        <option value="Port Neches">Port Neches</option>
+                    </select>
+                </div>
+
+                <!-- Shipping vs Local Pickup Filter -->
+                <div class="flex items-center bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200">
+                    <i class="fa-solid fa-truck-ramp-box text-indigo-600 mr-2"></i>
+                    <select id="filterFulfillment" onchange="renderApp()" class="bg-transparent border-none text-slate-700 font-medium text-xs sm:text-sm focus:outline-none cursor-pointer">
+                        <option value="ALL">Pickup & Shipping Options</option>
+                        <option value="pickup">Porch / Pickup Only</option>
+                        <option value="shipping">Ships Nationwide</option>
+                    </select>
+                </div>
+
+                <!-- Condition Filter -->
+                <div class="flex items-center bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200">
+                    <i class="fa-solid fa-tags text-slate-500 mr-2"></i>
+                    <select id="filterCondition" onchange="renderApp()" class="bg-transparent border-none text-slate-700 font-medium text-xs sm:text-sm focus:outline-none cursor-pointer">
+                        <option value="ALL">Any Condition</option>
+                        <option value="Brand New">Brand New</option>
+                        <option value="Like New">Like New</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                    </select>
+                </div>
+
+                <!-- Price Drops Filter Toggle -->
+                <button onclick="togglePriceCutFilter()" id="priceCutFilterBtn" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-fire text-amber-500"></i> Price Cuts Only
                 </button>
             </div>
 
-            <!-- Active Filters & Location Indicator -->
-            <div class="flex items-center gap-2 text-slate-500 font-medium">
-                <span id="activeStorefrontFilter" class="hidden bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md border border-emerald-200 flex items-center gap-1.5">
-                    <span>Seller Filter</span>
-                    <i class="fa-solid fa-xmark cursor-pointer hover:text-emerald-900" onclick="clearSellerFilter()"></i>
-                </span>
-                <div class="flex items-center gap-1 text-slate-600">
-                    <i class="fa-solid fa-location-dot text-emerald-600"></i>
-                    <span id="locationTitle" class="font-semibold text-slate-800">Southeast Texas (Nederland, Groves, Beaumont)</span>
-                </div>
+            <!-- Sort By -->
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Sort:</span>
+                <select id="sortOption" onchange="renderApp()" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer">
+                    <option value="newest">Recently Listed / Bumped</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="discount">Biggest Price Drop</option>
+                </select>
             </div>
         </div>
     </div>
 
-    <!-- MAIN CONTENT AREA -->
+    <!-- MAIN CONTENT VIEW CANVAS -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-        <!-- GRID VIEW CONTENT -->
-        <div id="gridView" class="block">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <span>Local Listings Nearby</span>
-                    <span id="itemCountBadge" class="bg-slate-200 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">0 items</span>
-                </h2>
-                <div class="flex items-center gap-2">
-                    <label for="sortSelect" class="text-xs text-slate-500 font-medium hidden sm:inline">Sort by:</label>
-                    <select id="sortSelect" onchange="applySorting()" class="bg-white border border-slate-300 rounded-lg text-xs px-2.5 py-1.5 focus:ring-emerald-500 focus:border-emerald-500 text-slate-700">
-                        <option value="newest">Newest First</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                    </select>
-                </div>
+        
+        <!-- VIEW 1: Main Feed Grid -->
+        <section id="view-feed" class="tab-content">
+            <div id="listingGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Populated dynamically via JS -->
             </div>
-
-            <!-- Items Grid -->
-            <div id="itemsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                <!-- Dynamically populated -->
-            </div>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm my-6">
+            <div id="noResults" class="hidden text-center py-16">
                 <i class="fa-solid fa-box-open text-5xl text-slate-300 mb-3"></i>
-                <h3 class="text-base font-bold text-slate-700">No listings found</h3>
-                <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">Try adjusting your category selection, search keywords, or clear seller filters to view items available in your area.</p>
-                <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition">Reset All Filters</button>
+                <h3 class="text-lg font-bold text-slate-600">No matching listings found</h3>
+                <p class="text-slate-400 text-sm mt-1">Try resetting filters or expanding your neighborhood radius.</p>
+                <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-emerald-600 text-white font-medium text-sm rounded-lg hover:bg-emerald-700">Reset Filters</button>
             </div>
-        </div>
+        </section>
 
-        <!-- MAP VIEW CONTENT -->
-        <div id="mapView" class="hidden">
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-4">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-map text-emerald-600"></i>
-                            <span>Interactive Neighborhood Map</span>
-                        </h2>
-                        <p class="text-xs text-slate-500">Click any green price pin to view photos, item details, and seller details.</p>
-                    </div>
-                    <button onclick="recenterMap()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-crosshairs text-emerald-600"></i>
-                        <span>Center Area</span>
-                    </button>
+        <!-- VIEW 2: Interactive Leaflet Map -->
+        <section id="view-map" class="tab-content hidden h-[calc(100vh-12rem)] flex flex-col rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+            <div class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h2 class="font-bold text-slate-800 text-base">Interactive Neighborhood Map</h2>
+                    <p class="text-xs text-slate-500">Pins indicate item locations. Click pins for item details & direct offers.</p>
                 </div>
-                
-                <!-- Real Leaflet Map Container -->
-                <div id="map-container" class="rounded-xl overflow-hidden border border-slate-200 shadow-inner"></div>
+                <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">Live Pins</span>
             </div>
-        </div>
+            <div class="flex-1 relative">
+                <div id="leaflet-map" class="z-10"></div>
+            </div>
+        </section>
 
-    </main>
-
-    <!-- FLOATING ACTION BUTTON (MOBILE SELL) -->
-    <button onclick="openPostItemModal()" class="sm:hidden fixed bottom-6 right-6 bg-amber-400 text-slate-900 p-4 rounded-full shadow-2xl z-30 font-black flex items-center justify-center border-2 border-white text-lg">
-        <i class="fa-solid fa-plus"></i>
-    </button>
-
-    <!-- MODAL: ITEM DETAIL & OFFER WINDOW -->
-    <div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
-            <div class="relative">
-                <button onclick="closeItemModal()" class="absolute top-3 right-3 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full w-8 h-8 flex items-center justify-center z-10 transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <div class="h-64 sm:h-80 bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                    <img id="modalItemImage" src="" alt="Item Photo" class="w-full h-full object-cover">
-                    <span id="modalItemCategory" class="absolute bottom-3 left-3 bg-slate-900/70 text-white text-xs px-2.5 py-1 rounded-md font-medium">Category</span>
+        <!-- VIEW 3: Saved Favorites View -->
+        <section id="view-favorites" class="tab-content hidden">
+            <div class="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Your Saved Favorites</h2>
+                    <p class="text-sm text-slate-500">Keep track of price drops and items you're interested in.</p>
                 </div>
+                <span id="favTotalText" class="text-sm font-semibold bg-slate-100 text-slate-700 px-3 py-1 rounded-full">0 Saved Items</span>
             </div>
+            <div id="favoritesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Populated dynamically -->
+            </div>
+            <div id="noFavorites" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                <i class="fa-regular fa-heart text-5xl text-rose-300 mb-3"></i>
+                <h3 class="text-lg font-bold text-slate-700">No favorites saved yet</h3>
+                <p class="text-slate-400 text-sm max-w-md mx-auto mt-1">Tap the heart icon on any listing card in the feed or map view to save it here for quick access.</p>
+                <button onclick="switchTab('feed')" class="mt-4 px-4 py-2 bg-emerald-600 text-white font-semibold text-sm rounded-xl hover:bg-emerald-700">Browse Listings</button>
+            </div>
+        </section>
 
-            <div class="p-5 sm:p-6 space-y-4">
-                <div class="flex justify-between items-start gap-3">
-                    <div>
-                        <h2 id="modalItemTitle" class="text-xl font-bold text-slate-800">Item Title</h2>
-                        <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                            <i class="fa-solid fa-location-dot text-emerald-600"></i>
-                            <span id="modalItemLocation">Location</span> • Listed 2 hrs ago
-                        </p>
+        <!-- VIEW 4: Messaging Inbox & Chat -->
+        <section id="view-messages" class="tab-content hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[550px]">
+                <!-- Chat Conversations Sidebar -->
+                <div class="border-r border-slate-200 flex flex-col bg-slate-50">
+                    <div class="p-4 border-b border-slate-200 font-bold text-slate-800 flex justify-between items-center">
+                        <span>Messages & Offers</span>
+                        <i class="fa-solid fa-comments text-emerald-600"></i>
                     </div>
-                    <div class="text-right">
-                        <span id="modalItemPrice" class="text-2xl font-black text-emerald-700">$0</span>
+                    <div id="chatThreadList" class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100">
+                        <!-- Threads rendered dynamically -->
                     </div>
                 </div>
 
-                <!-- Condition & Pickup Badge -->
-                <div class="flex flex-wrap gap-2 pt-1">
-                    <span id="modalItemCondition" class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
-                        <i class="fa-solid fa-tag text-[10px]"></i>
-                        <span>Condition</span>
-                    </span>
-                    <span id="modalItemPickup" class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
-                        <i class="fa-solid fa-house-user text-[10px]"></i>
-                        <span>Pickup Option</span>
-                    </span>
+                <!-- Chat Active Conversation Box -->
+                <div class="col-span-2 flex flex-col h-full bg-white">
+                    <div id="activeChatHeader" class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <div class="text-slate-400 text-sm italic">Select a conversation to start chatting</div>
+                    </div>
+                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-3 bg-slate-50/50">
+                        <div class="text-center text-slate-400 text-sm py-20">No active conversation chosen</div>
+                    </div>
+                    <!-- Message Form -->
+                    <div id="chatInputArea" class="p-3 border-t border-slate-200 bg-white hidden">
+                        <form onsubmit="handleSendMessage(event)" class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="Type your message or offer..." class="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <button type="submit" class="bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors">Send</button>
+                        </form>
+                    </div>
                 </div>
+            </div>
+        </section>
 
-                <div class="border-t border-slate-100 pt-3">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Description</h4>
-                    <p id="modalItemDescription" class="text-sm text-slate-600 leading-relaxed">Full item description goes here...</p>
-                </div>
-
-                <!-- Seller Profile Card Box -->
-                <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div id="modalSellerAvatar" class="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">
-                            JS
-                        </div>
+        <!-- VIEW 5: Seller Dashboard -->
+        <section id="view-dashboard" class="tab-content hidden">
+            <div class="max-w-5xl mx-auto space-y-6">
+                <!-- User Profile Card -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-xs" alt="User Avatar">
                         <div>
-                            <h4 id="modalSellerName" class="text-sm font-bold text-slate-800 cursor-pointer hover:underline" onclick="openPublicSellerModal()">Seller Name</h4>
-                            <div class="flex items-center gap-1 text-xs text-amber-500 font-semibold">
-                                <i class="fa-solid fa-star"></i>
-                                <span id="modalSellerRating">4.9</span>
-                                <span class="text-slate-400 font-normal">(18 reviews)</span>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-xl font-bold text-slate-900">Sarah Jenkins</h2>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-shield-halved text-emerald-600"></i> Verified Local Seller
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>Nederland, TX &bull; Member since 2023</p>
+                            <div class="flex items-center gap-1 text-amber-500 text-xs mt-1">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                                <span class="text-slate-600 font-medium ml-1">5.0 (28 ratings)</span>
                             </div>
                         </div>
                     </div>
-                    <button onclick="filterBySellerFromModal()" class="text-xs bg-white text-emerald-700 font-semibold border border-emerald-300 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition">
-                        View Storefront
+                    <button onclick="openPostModal()" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-sm">
+                        <i class="fa-solid fa-plus mr-1.5"></i> Post New Listing
                     </button>
                 </div>
 
-                <!-- Offer & Direct Message Section -->
-                <div class="bg-emerald-50/60 rounded-xl p-4 border border-emerald-100 space-y-3">
-                    <h3 class="text-sm font-bold text-emerald-900 flex items-center gap-1.5">
-                        <i class="fa-solid fa-paper-plane text-emerald-600"></i>
-                        <span>Make an Offer or Send Message</span>
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div class="relative sm:col-span-1">
-                            <span class="absolute left-3 top-2.5 text-slate-400 text-sm font-bold">$</span>
-                            <input type="number" id="offerAmountInput" placeholder="Offer Price" class="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-emerald-500 focus:border-emerald-500">
-                        </div>
-                        <input type="text" id="offerMessageInput" placeholder="Hi, is this still available?" class="sm:col-span-2 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                <!-- Active Listings Dashboard Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Your Active Listings (<span id="userListingCount">0</span>)</h3>
+                        <span class="text-xs text-slate-400">Manage, edit prices, or bump to top</span>
                     </div>
-                    <button onclick="submitOffer()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm transition shadow">
-                        Send Offer & Message
-                    </button>
+                    <div class="divide-y divide-slate-100" id="sellerListingsContainer">
+                        <!-- Seller items populated dynamically -->
+                    </div>
                 </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL 1: Listing Item Details View -->
+    <div id="itemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl transition-all transform my-8">
+            <div id="itemModalBody">
+                <!-- Injected via Javascript -->
             </div>
         </div>
     </div>
 
-    <!-- MODAL: POST NEW ITEM -->
-    <div id="postItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 p-6">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-circle-plus text-emerald-600"></i>
-                    <span>List an Item for Sale</span>
-                </h2>
-                <button onclick="closePostItemModal()" class="text-slate-400 hover:text-slate-600 text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <form id="postItemForm" onsubmit="handlePostItem(event)" class="space-y-4 text-xs sm:text-sm">
+    <!-- MODAL 2: Create New Item Listing -->
+    <div id="postModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl p-6 relative">
+            <button onclick="closePostModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Create Local Listing</h2>
+            <p class="text-xs text-slate-500 mb-4">Post your item for buyers in Nederland, Groves & SE Texas.</p>
+            
+            <form onsubmit="handleCreateListing(event)" class="space-y-4 text-sm">
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Item Title *</label>
-                    <input type="text" id="postTitle" required placeholder="e.g. Vintage Oak Coffee Table" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                    <label class="block font-semibold text-slate-700 mb-1">Title</label>
+                    <input type="text" id="postTitle" required placeholder="e.g. Vintage Oak Dining Table" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Price ($) *</label>
-                        <input type="number" id="postPrice" required min="0" step="1" placeholder="35" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                        <label class="block font-semibold text-slate-700 mb-1">Price ($)</label>
+                        <input type="number" id="postPrice" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Category *</label>
-                        <select id="postCategory" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="Furniture">Furniture</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Tools & Lawn">Tools & Lawn</option>
-                            <option value="Apparel">Apparel</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- ITEM CONDITION SELECTOR -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Condition *</label>
-                        <select id="postCondition" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="New (Unopened)">New (Unopened)</option>
+                        <label class="block font-semibold text-slate-700 mb-1">Condition</label>
+                        <select id="postCondition" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="Brand New">Brand New</option>
                             <option value="Like New" selected>Like New</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
-                            <option value="For Parts / Repair">For Parts / Repair</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Neighborhood *</label>
-                        <select id="postNeighborhood" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                        <label class="block font-semibold text-slate-700 mb-1">Neighborhood</label>
+                        <select id="postNeighborhood" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
                             <option value="Nederland">Nederland</option>
                             <option value="Groves">Groves</option>
                             <option value="West Beaumont">West Beaumont</option>
                             <option value="Orange County">Orange County</option>
+                            <option value="Port Neches">Port Neches</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Shipping & Pickup</label>
+                        <select id="postFulfillment" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="pickup">Local Porch Pickup Only</option>
+                            <option value="shipping">Ships Nationwide</option>
+                            <option value="both">Both (Pickup or Shipping)</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Pickup Type *</label>
-                    <select id="postPickup" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                        <option value="Porch Pickup">Porch Pickup</option>
-                        <option value="Driveway Sale">Driveway Sale</option>
-                        <option value="Public Meetup">Public Meetup</option>
-                    </select>
+                    <label class="block font-semibold text-slate-700 mb-1">Image URL</label>
+                    <input type="url" id="postImage" placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <span class="text-[11px] text-slate-400">Leave blank for automatic sample photo.</span>
                 </div>
 
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Photo *</label>
-                    <div class="space-y-2">
-                        <input type="url" id="postImageUrl" placeholder="Paste Image URL (e.g., https://...)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
-                        <div class="text-center text-xs text-slate-400 font-medium">-- OR upload local image file --</div>
-                        <input type="file" id="postImageFile" accept="image/*" onchange="handleFileSelect(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                    </div>
-                    <div id="imagePreviewContainer" class="mt-2 hidden">
-                        <img id="imagePreview" src="" class="h-28 rounded-lg object-cover border border-slate-200">
-                    </div>
+                    <label class="block font-semibold text-slate-700 mb-1">Description</label>
+                    <textarea id="postDescription" rows="3" placeholder="Describe the condition, dimensions, pick up spot..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
                 </div>
 
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Description *</label>
-                    <textarea id="postDescription" rows="3" required placeholder="Describe condition, details, or reasons for selling..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"></textarea>
-                </div>
-
-                <div class="pt-2">
-                    <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition shadow">
-                        Publish Listing
-                    </button>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closePostModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-medium">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-semibold shadow-md">Publish Listing</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: INBOX & MESSAGES -->
-    <div id="inboxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center">
-                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-comments text-emerald-600"></i>
-                    <span>Messages & Offers Inbox</span>
-                </h2>
-                <button onclick="closeInboxModal()" class="text-slate-400 hover:text-slate-600 text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <div id="inboxList" class="flex-1 overflow-y-auto p-4 space-y-3">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: USER PROFILE & SELLER DASHBOARD -->
-    <div id="userModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-100 p-6">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-emerald-600"></i>
-                    <span>Seller Dashboard</span>
-                </h2>
-                <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="space-y-4">
-                <div class="flex items-center gap-4 bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                    <div id="userDashAvatar" class="w-14 h-14 rounded-full bg-emerald-700 text-white text-xl font-bold flex items-center justify-center shadow">
-                        ME
-                    </div>
-                    <div>
-                        <h3 id="userDashName" class="font-bold text-slate-800 text-base">Current User</h3>
-                        <p class="text-xs text-slate-500">Local Seller • Nederland, TX</p>
-                        <div class="flex flex-wrap gap-1 mt-1.5">
-                            <span class="bg-white text-emerald-700 border border-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-semibold">
-                                <i class="fa-solid fa-shield-halved mr-1"></i>Porch Verified
-                            </span>
-                            <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-md font-semibold">
-                                ★ 5.0 Rating
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
+    <!-- MODAL 3: Seller Discount / Edit Price Modal -->
+    <div id="priceModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Discount Listing Price</h3>
+            <p class="text-xs text-slate-500 mb-4">Set a lower price to apply a <span class="text-rose-600 font-bold">Price Cut</span> badge and notify local buyers!</p>
+            <input type="hidden" id="discountItemId">
+            <div class="space-y-3">
                 <div>
-                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">My Active Listings</h4>
-                    <div id="myListingsContainer" class="space-y-2">
-                        <!-- My listings rendered here -->
-                    </div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Current Price</label>
+                    <input type="text" id="discountOriginalPrice" readonly class="w-full bg-slate-100 text-slate-500 px-3 py-2 rounded-xl text-sm font-bold" value="$0.00">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">New Lower Price ($)</label>
+                    <input type="number" id="discountNewPrice" step="0.01" class="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Enter lower price">
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- MODAL: PUBLIC SELLER PROFILE & REVIEWS -->
-    <div id="publicSellerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-100 p-6">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-base font-bold text-slate-800">Seller Profile</h2>
-                <button onclick="closePublicSellerModal()" class="text-slate-400 hover:text-slate-600 text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="text-center py-3 border-b border-slate-100">
-                <div id="pubSellerAvatar" class="w-16 h-16 rounded-full bg-emerald-600 text-white text-xl font-bold flex items-center justify-center mx-auto mb-2 shadow">
-                    JS
-                </div>
-                <h3 id="pubSellerName" class="text-lg font-bold text-slate-800">Jane Smith</h3>
-                <p class="text-xs text-slate-500">Member since 2023 • Nederland Neighbor</p>
-                
-                <!-- Seller Badges -->
-                <div class="flex justify-center flex-wrap gap-1.5 mt-3">
-                    <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold">
-                        <i class="fa-solid fa-check-double mr-1"></i>Porch Pickup Verified
-                    </span>
-                    <span class="bg-amber-50 text-amber-800 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-semibold">
-                        <i class="fa-solid fa-award mr-1"></i>Top Rated Neighbor
-                    </span>
-                    <span class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-semibold">
-                        <i class="fa-solid fa-bolt mr-1"></i>Quick Responder
-                    </span>
-                </div>
-            </div>
-
-            <!-- Reviews Section -->
-            <div class="mt-4 space-y-3">
-                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Community Reviews (3)</h4>
-                <div id="reviewsList" class="space-y-2 text-xs">
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-slate-700">Mike R.</span>
-                            <span class="text-amber-500 font-semibold">★★★★★</span>
-                        </div>
-                        <p class="text-slate-600">Great item, smooth porch pickup! Very honest seller.</p>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-slate-700">Sarah B.</span>
-                            <span class="text-amber-500 font-semibold">★★★★★</span>
-                        </div>
-                        <p class="text-slate-600">Quick response and fair prices. Highly recommended!</p>
-                    </div>
-                </div>
+            <div class="mt-5 flex justify-end gap-2">
+                <button onclick="closePriceModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-xl text-xs font-semibold">Cancel</button>
+                <button onclick="savePriceDiscount()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md">Apply Price Cut</button>
             </div>
         </div>
     </div>
 
     <script>
-        // MOCK DATA STORE
-        const INITIAL_ITEMS = [
+        // --- DATA STORE ---
+        let items = [
             {
                 id: '1',
-                title: 'Craftsman Riding Lawn Mower 42"',
-                price: 450,
-                category: 'Tools & Lawn',
-                condition: 'Good',
+                title: 'DeWalt 20V Max Cordless Drill Set',
+                price: 75.00,
+                originalPrice: 110.00,
+                condition: 'Like New',
                 neighborhood: 'Nederland',
-                pickup: 'Driveway Sale',
-                seller: 'John Miller',
-                sellerAvatar: 'JM',
-                sellerRating: '4.9',
-                image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb23659?auto=format&fit=crop&w=600&q=80',
-                description: 'Runs great! Fresh oil change and new battery installed last month. Perfect for local yard maintenance.',
-                lat: 29.9749,
-                lng: -93.9935
+                fulfillment: 'both', // 'pickup', 'shipping', 'both'
+                isFeatured: true,
+                updatedAt: Date.now() - 3600000,
+                seller: {
+                    name: 'Dave Miller',
+                    rating: 4.9,
+                    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+                    isVerified: true,
+                    isCurrentUser: false
+                },
+                image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=600&q=80',
+                description: 'Barely used DeWalt drill with two 2.0Ah batteries and charger. Comes in soft carrying case.',
+                lat: 29.9722,
+                lng: -93.9924
             },
             {
                 id: '2',
-                title: 'Solid Oak Dining Set + 6 Chairs',
-                price: 180,
-                category: 'Furniture',
-                condition: 'Like New',
+                title: 'Mid-Century Modern Teak Coffee Table',
+                price: 140.00,
+                originalPrice: 140.00,
+                condition: 'Good',
                 neighborhood: 'Groves',
-                pickup: 'Porch Pickup',
-                seller: 'Sarah Jenkins',
-                sellerAvatar: 'SJ',
-                sellerRating: '5.0',
-                image: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?auto=format&fit=crop&w=600&q=80',
-                description: 'Beautiful sturdy solid oak dining table with six matching chairs. Non-smoking home, clean surface.',
+                fulfillment: 'pickup',
+                isFeatured: false,
+                updatedAt: Date.now() - 7200000,
+                seller: {
+                    name: 'Sarah Jenkins',
+                    rating: 5.0,
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                    isVerified: true,
+                    isCurrentUser: true
+                },
+                image: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80',
+                description: 'Solid teak wood coffee table from the 1960s. Minor surface character wear on the legs, overall sturdy condition.',
                 lat: 29.9488,
                 lng: -93.9168
             },
             {
                 id: '3',
-                title: 'Samsung 55" 4K Smart TV',
-                price: 140,
-                category: 'Electronics',
-                condition: 'Good',
+                title: 'Nintendo Switch OLED + Zelda Tears of the Kingdom',
+                price: 260.00,
+                originalPrice: 320.00,
+                condition: 'Like New',
                 neighborhood: 'West Beaumont',
-                pickup: 'Public Meetup',
-                seller: 'David Ross',
-                sellerAvatar: 'DR',
-                sellerRating: '4.8',
-                image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=600&q=80',
-                description: 'Works perfectly! Comes with original remote control and power cord. Upgraded to a larger size.',
+                fulfillment: 'shipping',
+                isFeatured: true,
+                updatedAt: Date.now() - 10800000,
+                seller: {
+                    name: 'Alex Rivera',
+                    rating: 4.8,
+                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+                    isVerified: true,
+                    isCurrentUser: false
+                },
+                image: 'https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?auto=format&fit=crop&w=600&q=80',
+                description: 'White OLED model Switch. Includes box, HDMI, dock, and Zelda cart. Ships fast or local meet up.',
                 lat: 30.0802,
                 lng: -94.1266
             },
             {
                 id: '4',
-                title: 'Dewalt 20V Cordless Tool Kit',
-                price: 95,
-                category: 'Tools & Lawn',
-                condition: 'Like New',
+                title: 'Cast Iron Patio Bistro Set (Table & 2 Chairs)',
+                price: 85.00,
+                originalPrice: 85.00,
+                condition: 'Fair',
                 neighborhood: 'Orange County',
-                pickup: 'Porch Pickup',
-                seller: 'John Miller',
-                sellerAvatar: 'JM',
-                sellerRating: '4.9',
-                image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=600&q=80',
-                description: 'Includes drill, impact driver, two 2.0Ah batteries, and charger. Barely used on one small project.',
+                fulfillment: 'pickup',
+                isFeatured: false,
+                updatedAt: Date.now() - 18000000,
+                seller: {
+                    name: 'Karen B.',
+                    rating: 4.7,
+                    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+                    isVerified: false,
+                    isCurrentUser: false
+                },
+                image: 'https://images.unsplash.com/photo-1519974719765-e6559eac2575?auto=format&fit=crop&w=600&q=80',
+                description: 'Heavy duty vintage cast iron set. Weathered look or great for a quick spray paint touch-up project.',
                 lat: 30.0991,
                 lng: -93.7360
             },
             {
                 id: '5',
-                title: 'Leather Armchair Recliner',
-                price: 75,
-                category: 'Furniture',
-                condition: 'Fair',
+                title: 'Traeger Pro 575 Pellet Grill with Cover',
+                price: 400.00,
+                originalPrice: 550.00,
+                condition: 'Good',
                 neighborhood: 'Nederland',
-                pickup: 'Driveway Sale',
-                seller: 'Emma Watson',
-                sellerAvatar: 'EW',
-                sellerRating: '4.7',
-                image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80',
-                description: 'Very comfortable real leather recliner. Minor wear on right armrest but otherwise solid condition.',
-                lat: 29.9820,
-                lng: -93.9820
-            },
-            {
-                id: '6',
-                title: 'Vintage Leather Jacket (Size L)',
-                price: 45,
-                category: 'Apparel',
-                condition: 'Like New',
-                neighborhood: 'Groves',
-                pickup: 'Porch Pickup',
-                seller: 'Sarah Jenkins',
-                sellerAvatar: 'SJ',
-                sellerRating: '5.0',
-                image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80',
-                description: 'Authentic brown leather bomber jacket. Great stitching and soft lining. Fits true to size.',
-                lat: 29.9540,
-                lng: -93.9240
+                fulfillment: 'pickup',
+                isFeatured: false,
+                updatedAt: Date.now() - 86400000,
+                seller: {
+                    name: 'Sarah Jenkins',
+                    rating: 5.0,
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                    isVerified: true,
+                    isCurrentUser: true
+                },
+                image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+                description: 'Works great with WiFIRE connectivity. Includes heavy duty cover and 2 full bags of hickory pellets.',
+                lat: 29.9780,
+                lng: -93.9990
             }
         ];
 
-        // APP STATE
-        let items = [...INITIAL_ITEMS];
-        let filteredItems = [...items];
-        let currentCategory = 'All';
-        let currentSellerFilter = null;
-        let activeView = 'grid'; // 'grid' or 'map'
-        let selectedItem = null;
-        let messages = [];
-        let leafletMap = null;
+        let favorites = new Set(['1']); // Stores item IDs
+        let currentTab = 'feed';
+        let filterPriceCutsOnly = false;
+        let map = null;
         let mapMarkers = [];
-        let uploadedImageBase64 = null;
 
-        // INITIALIZATION
+        // Chat threads mockup
+        let chatThreads = [
+            {
+                id: 't1',
+                itemId: '1',
+                buyerName: 'You',
+                sellerName: 'Dave Miller',
+                itemTitle: 'DeWalt 20V Max Cordless Drill Set',
+                itemPrice: 75.00,
+                messages: [
+                    { sender: 'Dave Miller', text: 'Hi! Is local porch pickup fine for you in Nederland?', time: '10:15 AM' },
+                    { sender: 'You', text: 'Yes! Would you take $65 cash today?', time: '10:18 AM' }
+                ]
+            }
+        ];
+        let activeThreadId = 't1';
+
+        // --- CORE APPLICATION LOGIC ---
+
         window.onload = function() {
-            renderGridItems();
-            updateItemCount();
-            
-            // Check for saved messages in local storage if available
-            try {
-                const saved = localStorage.getItem('yardsale_messages');
-                if (saved) messages = JSON.parse(saved);
-            } catch(e) {}
-            
-            updateInboxBadge();
+            renderApp();
+            initLeafletMap();
+            updateFavBadges();
         };
 
-        // VIEW SWITCHING
-        function switchView(view) {
-            activeView = view;
-            const gridViewEl = document.getElementById('gridView');
-            const mapViewEl = document.getElementById('mapView');
-            const btnGrid = document.getElementById('btnGridView');
-            const btnMap = document.getElementById('btnMapView');
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Un-highlight nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-50', 'text-emerald-600');
+                btn.classList.add('text-slate-600');
+            });
 
-            if (view === 'grid') {
-                gridViewEl.classList.remove('hidden');
-                mapViewEl.classList.add('hidden');
+            // Show active tab
+            const activeContent = document.getElementById(`view-${tabName}`);
+            if (activeContent) activeContent.classList.remove('hidden');
 
-                btnGrid.className = "px-3 py-1.5 rounded-md bg-white text-emerald-800 shadow transition-all";
-                btnMap.className = "px-3 py-1.5 rounded-md text-emerald-100 hover:text-white transition-all";
-            } else {
-                gridViewEl.classList.add('hidden');
-                mapViewEl.classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600');
+                activeBtn.classList.add('bg-emerald-50', 'text-emerald-600');
+            }
 
-                btnGrid.className = "px-3 py-1.5 rounded-md text-emerald-100 hover:text-white transition-all";
-                btnMap.className = "px-3 py-1.5 rounded-md bg-white text-emerald-800 shadow transition-all";
-
-                // Initialize or refresh Leaflet Map
+            // Map resize trigger fix
+            if (tabName === 'map') {
                 setTimeout(() => {
-                    initOrRefreshMap();
-                }, 100);
-            }
-        }
-
-        // LEAFLET MAP ENGINE
-        function initOrRefreshMap() {
-            if (!leafletMap) {
-                // Center on Southeast Texas (Nederland / Groves / Beaumont area)
-                leafletMap = L.map('map-container').setView([29.9749, -93.9535], 11);
-
-                // Add standard OpenStreetMap tiles
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(leafletMap);
+                    if (map) {
+                        map.invalidateSize();
+                        updateMapMarkers();
+                    }
+                }, 150);
             }
 
-            // CRITICAL FIX FOR GRAY DOTS / CANVAS COLLAPSE: force container recalculation
-            leafletMap.invalidateSize();
-
-            // Render markers for filtered items
-            renderMapMarkers();
+            renderApp();
         }
 
-        function renderMapMarkers() {
-            if (!leafletMap) return;
+        // --- MAP FUNCTIONS ---
+        function initLeafletMap() {
+            const mapContainer = document.getElementById('leaflet-map');
+            if (!mapContainer || map) return;
 
-            // Clear previous markers
-            mapMarkers.forEach(m => leafletMap.removeLayer(m));
+            map = L.map('leaflet-map').setView([29.98, -93.96], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            updateMapMarkers();
+        }
+
+        function updateMapMarkers() {
+            if (!map) return;
+
+            // Clear old markers
+            mapMarkers.forEach(m => map.removeLayer(m));
             mapMarkers = [];
 
-            const bounds = [];
+            const filtered = getFilteredItems();
 
-            filteredItems.forEach(item => {
+            filtered.forEach(item => {
+                const isDiscounted = item.originalPrice && item.price < item.originalPrice;
+                
+                // Custom Leaflet HTML Pin Icon
                 const customIcon = L.divIcon({
-                    className: 'custom-pin-wrapper',
-                    html: `<div class="custom-map-pin">$${item.price}</div>`,
-                    iconSize: [50, 30],
-                    iconAnchor: [25, 30]
+                    className: 'custom-map-pin',
+                    html: `
+                        <div class="bg-slate-900 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-lg border-2 border-emerald-500 flex items-center gap-1 cursor-pointer whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform">
+                            <span>$${item.price}</span>
+                            ${isDiscounted ? '<span class="bg-rose-500 w-2 h-2 rounded-full"></span>' : ''}
+                        </div>
+                    `,
+                    iconSize: [0, 0]
                 });
 
+                const fulfillmentText = item.fulfillment === 'pickup' ? 'Porch Pickup' : item.fulfillment === 'shipping' ? 'Ships' : 'Pickup or Ship';
+
                 const popupContent = `
-                    <div class="w-48 text-xs font-sans">
-                        <img src="${item.image}" class="w-full h-24 object-cover rounded-lg mb-2" alt="${item.title}">
-                        <div class="font-bold text-slate-800 text-sm truncate">${item.title}</div>
-                        <div class="text-emerald-700 font-black text-sm my-0.5">$${item.price}</div>
-                        <div class="text-slate-500 mb-1 flex justify-between">
-                            <span>${item.neighborhood}</span>
-                            <span class="font-semibold text-emerald-600">${item.condition}</span>
+                    <div class="p-1 max-w-[200px]">
+                        <img src="${item.image}" class="w-full h-24 object-cover rounded-lg mb-2">
+                        <div class="font-bold text-slate-800 text-sm line-clamp-1">${item.title}</div>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <span class="font-extrabold text-emerald-600">$${item.price}</span>
+                            ${isDiscounted ? `<span class="text-[10px] text-slate-400 line-through">$${item.originalPrice}</span>` : ''}
                         </div>
-                        <button onclick="openItemModal('${item.id}')" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-md transition text-center block mt-1">
-                            View & Offer
-                        </button>
+                        <div class="text-[10px] text-slate-500 font-medium mt-1">
+                            <i class="fa-solid fa-location-dot text-slate-400"></i> ${item.neighborhood} &bull; ${fulfillmentText}
+                        </div>
+                        <button onclick="openItemModal('${item.id}')" class="mt-2.5 w-full bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-semibold shadow-xs">View Details</button>
                     </div>
                 `;
 
                 const marker = L.marker([item.lat, item.lng], { icon: customIcon })
-                    .addTo(leafletMap)
-                    .bindPopup(popupContent);
+                    .bindPopup(popupContent)
+                    .addTo(map);
 
                 mapMarkers.push(marker);
-                bounds.push([item.lat, item.lng]);
+            });
+        }
+
+        // --- RENDER LOGIC ---
+
+        function getFilteredItems() {
+            const query = (document.getElementById('searchInput')?.value || document.getElementById('mobileSearchInput')?.value || '').toLowerCase();
+            const neighborhood = document.getElementById('filterNeighborhood')?.value || 'ALL';
+            const fulfillment = document.getElementById('filterFulfillment')?.value || 'ALL';
+            const condition = document.getElementById('filterCondition')?.value || 'ALL';
+            const sortOption = document.getElementById('sortOption')?.value || 'newest';
+
+            let result = items.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(query) || item.description.toLowerCase().includes(query);
+                const matchesHood = neighborhood === 'ALL' || item.neighborhood === neighborhood;
+                const matchesFulfill = fulfillment === 'ALL' || item.fulfillment === fulfillment || item.fulfillment === 'both';
+                const matchesCond = condition === 'ALL' || item.condition === condition;
+                const matchesPriceCut = !filterPriceCutsOnly || (item.originalPrice && item.price < item.originalPrice);
+
+                return matchesSearch && matchesHood && matchesFulfill && matchesCond && matchesPriceCut;
             });
 
-            // Adjust view to fit markers if present
-            if (bounds.length > 0) {
-                leafletMap.fitBounds(bounds, { padding: [40, 40] });
-            }
-        }
+            // Sorting
+            result.sort((a, b) => {
+                // Featured/Promoted items float higher
+                if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
 
-        function recenterMap() {
-            if (leafletMap) {
-                leafletMap.setView([29.9749, -93.9535], 11);
-                leafletMap.invalidateSize();
-            }
-        }
-
-        // FILTER & SEARCH LOGIC
-        function filterCategory(cat) {
-            currentCategory = cat;
-            
-            // Update active pill styling
-            document.querySelectorAll('.cat-pill').forEach(btn => {
-                if (btn.dataset.cat === cat) {
-                    btn.className = "cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-emerald-100 text-emerald-800 border border-emerald-300";
-                } else {
-                    btn.className = "cat-pill px-3 py-1.5 rounded-full font-medium whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200";
+                if (sortOption === 'price-low') return a.price - b.price;
+                if (sortOption === 'price-high') return b.price - a.price;
+                if (sortOption === 'discount') {
+                    const diffA = (a.originalPrice || a.price) - a.price;
+                    const diffB = (b.originalPrice || b.price) - b.price;
+                    return diffB - diffA;
                 }
+                return b.updatedAt - a.updatedAt; // default newest/bumped
             });
 
-            applyFilters();
+            return result;
         }
 
-        function handleSearch(event) {
-            applyFilters();
-        }
+        function renderApp() {
+            const filtered = getFilteredItems();
 
-        function filterBySeller(sellerName) {
-            currentSellerFilter = sellerName;
-            document.getElementById('activeStorefrontFilter').classList.remove('hidden');
-            applyFilters();
-            closeItemModal();
-        }
+            if (currentTab === 'feed') {
+                renderFeedGrid(filtered);
+            } else if (currentTab === 'favorites') {
+                renderFavoritesGrid();
+            } else if (currentTab === 'dashboard') {
+                renderSellerDashboard();
+            } else if (currentTab === 'messages') {
+                renderChatInbox();
+            }
 
-        function filterBySellerFromModal() {
-            if (selectedItem) {
-                filterBySeller(selectedItem.seller);
+            if (map) {
+                updateMapMarkers();
             }
         }
 
-        function clearSellerFilter() {
-            currentSellerFilter = null;
-            document.getElementById('activeStorefrontFilter').classList.add('hidden');
-            applyFilters();
+        function renderFeedGrid(itemList) {
+            const grid = document.getElementById('listingGrid');
+            const noResults = document.getElementById('noResults');
+
+            if (itemList.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            grid.innerHTML = itemList.map(item => createCardHTML(item)).join('');
+        }
+
+        function renderFavoritesGrid() {
+            const grid = document.getElementById('favoritesGrid');
+            const noFavs = document.getElementById('noFavorites');
+            const favTotalText = document.getElementById('favTotalText');
+
+            const favItems = items.filter(i => favorites.has(i.id));
+
+            favTotalText.innerText = `${favItems.length} Saved Items`;
+
+            if (favItems.length === 0) {
+                grid.innerHTML = '';
+                noFavs.classList.remove('hidden');
+                return;
+            }
+
+            noFavs.classList.add('hidden');
+            grid.innerHTML = favItems.map(item => createCardHTML(item)).join('');
+        }
+
+        function createCardHTML(item) {
+            const isFav = favorites.has(item.id);
+            const hasPriceCut = item.originalPrice && item.price < item.originalPrice;
+            const priceCutDiff = hasPriceCut ? Math.round(item.originalPrice - item.price) : 0;
+
+            // Fulfillment Badge
+            let fulfillmentBadge = '';
+            if (item.fulfillment === 'pickup') {
+                fulfillmentBadge = `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-slate-200"><i class="fa-solid fa-house-user text-slate-500 mr-1"></i>Pickup</span>`;
+            } else if (item.fulfillment === 'shipping') {
+                fulfillmentBadge = `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-indigo-200"><i class="fa-solid fa-box text-indigo-500 mr-1"></i>Ships</span>`;
+            } else {
+                fulfillmentBadge = `<span class="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-blue-200"><i class="fa-solid fa-truck-pickup text-blue-500 mr-1"></i>Pickup & Ship</span>`;
+            }
+
+            return `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col relative group">
+                    <!-- Top Image Section -->
+                    <div class="relative aspect-4/3 bg-slate-100 overflow-hidden cursor-pointer" onclick="openItemModal('${item.id}')">
+                        <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        
+                        <!-- Promoted Tag -->
+                        ${item.isFeatured ? `
+                            <span class="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full shadow-md tracking-wider flex items-center gap-1 pulse-badge">
+                                <i class="fa-solid fa-bolt"></i> Promoted
+                            </span>
+                        ` : ''}
+
+                        <!-- Favorite Button Overlay -->
+                        <button onclick="event.stopPropagation(); toggleFavorite('${item.id}')" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-slate-600 hover:text-rose-500 hover:bg-white shadow-md transition-all">
+                            <i class="fa-${isFav ? 'solid text-rose-500' : 'regular'} fa-heart"></i>
+                        </button>
+
+                        <!-- Price Cut Badge -->
+                        ${hasPriceCut ? `
+                            <div class="absolute bottom-3 left-3 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-md shadow-md flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-down-long"></i> Save $${priceCutDiff} (Price Cut)
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 onclick="openItemModal('${item.id}')" class="font-bold text-slate-800 text-base line-clamp-1 cursor-pointer hover:text-emerald-600 transition-colors">${item.title}</h3>
+                            </div>
+
+                            <!-- Price Display -->
+                            <div class="mt-1 flex items-baseline gap-2">
+                                <span class="text-xl font-extrabold text-slate-900">$${item.price.toFixed(2)}</span>
+                                ${hasPriceCut ? `<span class="text-xs text-slate-400 line-through font-medium">$${item.originalPrice.toFixed(2)}</span>` : ''}
+                            </div>
+
+                            <!-- Badges Row -->
+                            <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                                <span class="bg-emerald-50 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
+                                    ${item.condition}
+                                </span>
+                                ${fulfillmentBadge}
+                            </div>
+                        </div>
+
+                        <!-- Location & Seller Info -->
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                            <div class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot text-slate-400"></i>
+                                <span>${item.neighborhood}</span>
+                            </div>
+                            <button onclick="openItemModal('${item.id}')" class="text-emerald-600 font-semibold hover:underline">
+                                Details &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleFavorite(id) {
+            if (favorites.has(id)) {
+                favorites.delete(id);
+            } else {
+                favorites.add(id);
+            }
+            updateFavBadges();
+            renderApp();
+        }
+
+        function updateFavBadges() {
+            const count = favorites.size;
+            const badge = document.getElementById('favCountBadge');
+            if (badge) {
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        function togglePriceCutFilter() {
+            filterPriceCutsOnly = !filterPriceCutsOnly;
+            const btn = document.getElementById('priceCutFilterBtn');
+            if (filterPriceCutsOnly) {
+                btn.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-800', 'font-bold');
+            } else {
+                btn.classList.remove('bg-amber-50', 'border-amber-300', 'text-amber-800', 'font-bold');
+            }
+            renderApp();
+        }
+
+        function syncMobileSearch(val) {
+            const mainSearch = document.getElementById('searchInput');
+            if (mainSearch) mainSearch.value = val;
+            renderApp();
         }
 
         function resetFilters() {
-            currentCategory = 'All';
-            currentSellerFilter = null;
-            document.getElementById('desktopSearchInput').value = '';
+            document.getElementById('searchInput').value = '';
             document.getElementById('mobileSearchInput').value = '';
-            document.getElementById('activeStorefrontFilter').classList.add('hidden');
-            filterCategory('All');
+            document.getElementById('filterNeighborhood').value = 'ALL';
+            document.getElementById('filterFulfillment').value = 'ALL';
+            document.getElementById('filterCondition').value = 'ALL';
+            document.getElementById('sortOption').value = 'newest';
+            filterPriceCutsOnly = false;
+            document.getElementById('priceCutFilterBtn')?.classList.remove('bg-amber-50', 'border-amber-300', 'text-amber-800', 'font-bold');
+            renderApp();
         }
 
-        function applyFilters() {
-            const searchQuery = (document.getElementById('desktopSearchInput').value || document.getElementById('mobileSearchInput').value || '').toLowerCase();
+        function openItemModal(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
 
-            filteredItems = items.filter(item => {
-                const matchesCategory = currentCategory === 'All' || item.category === currentCategory;
-                const matchesSeller = !currentSellerFilter || item.seller === currentSellerFilter;
-                const matchesSearch = item.title.toLowerCase().includes(searchQuery) ||
-                                     item.description.toLowerCase().includes(searchQuery) ||
-                                     item.neighborhood.toLowerCase().includes(searchQuery);
-                return matchesCategory && matchesSeller && matchesSearch;
-            });
+            const modal = document.getElementById('itemModal');
+            const modalBody = document.getElementById('itemModalBody');
+            const isFav = favorites.has(item.id);
+            const hasPriceCut = item.originalPrice && item.price < item.originalPrice;
 
-            applySorting();
-        }
-
-        function applySorting() {
-            const sortVal = document.getElementById('sortSelect').value;
-            if (sortVal === 'price-low') {
-                filteredItems.sort((a, b) => a.price - b.price);
-            } else if (sortVal === 'price-high') {
-                filteredItems.sort((a, b) => b.price - a.price);
-            } else {
-                // Default newest
-                filteredItems.sort((a, b) => b.id.localeCompare(a.id));
-            }
-
-            renderGridItems();
-            updateItemCount();
-
-            if (activeView === 'map') {
-                renderMapMarkers();
-            }
-        }
-
-        function updateItemCount() {
-            document.getElementById('itemCountBadge').textContent = `${filteredItems.length} items`;
-            
-            const emptyState = document.getElementById('emptyState');
-            if (filteredItems.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-            }
-        }
-
-        // RENDER ITEM CARDS
-        function renderGridItems() {
-            const gridContainer = document.getElementById('itemsGrid');
-            gridContainer.innerHTML = '';
-
-            filteredItems.forEach(item => {
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col group";
-                card.onclick = () => openItemModal(item.id);
-
-                card.innerHTML = `
-                    <div class="h-44 bg-slate-100 relative overflow-hidden">
-                        <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                        <span class="absolute top-2 right-2 bg-emerald-700 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">
-                            $${item.price}
-                        </span>
-                        <span class="absolute bottom-2 left-2 bg-slate-900/70 text-white text-[10px] font-medium px-2 py-0.5 rounded backdrop-blur-xs">
-                            ${item.condition}
-                        </span>
-                    </div>
-                    <div class="p-3 flex-1 flex flex-col justify-between space-y-2">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-sm group-hover:text-emerald-700 transition line-clamp-1">${item.title}</h3>
-                            <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
-                                <i class="fa-solid fa-location-dot text-emerald-600"></i>
-                                <span>${item.neighborhood}</span>
-                            </p>
+            modalBody.innerHTML = `
+                <div class="relative">
+                    <button onclick="closeItemModal()" class="absolute top-4 right-4 z-10 bg-black/40 hover:bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-2">
+                        <!-- Image -->
+                        <div class="bg-slate-100 relative min-h-[280px]">
+                            <img src="${item.image}" class="w-full h-full object-cover">
+                            ${hasPriceCut ? `
+                                <div class="absolute top-4 left-4 bg-rose-600 text-white font-bold text-xs px-3 py-1 rounded-md shadow-md">
+                                    Price Cut - Save $${Math.round(item.originalPrice - item.price)}
+                                </div>
+                            ` : ''}
                         </div>
-                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                            <span class="text-slate-500 text-[11px] font-medium">${item.seller}</span>
-                            <span class="text-emerald-600 font-bold group-hover:underline text-[11px]">View & Offer →</span>
+
+                        <!-- Details -->
+                        <div class="p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                                    <span>Posted in <strong class="text-slate-600">${item.neighborhood}</strong></span>
+                                    <span>${new Date(item.updatedAt).toLocaleDateString()}</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900">${item.title}</h2>
+
+                                <div class="mt-3 flex items-baseline gap-3">
+                                    <span class="text-3xl font-extrabold text-slate-900">$${item.price.toFixed(2)}</span>
+                                    ${hasPriceCut ? `<span class="text-base text-slate-400 line-through">$${item.originalPrice.toFixed(2)}</span>` : ''}
+                                </div>
+
+                                <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                                    <span class="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
+                                        Condition: ${item.condition}
+                                    </span>
+                                    <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-semibold border border-slate-200">
+                                        Fulfillment: ${item.fulfillment === 'pickup' ? 'Porch Pickup Only' : item.fulfillment === 'shipping' ? 'Ships Nationwide' : 'Pickup or Shipping'}
+                                    </span>
+                                </div>
+
+                                <p class="mt-4 text-sm text-slate-600 leading-relaxed">${item.description}</p>
+
+                                <!-- Seller Profile Card -->
+                                <div class="mt-6 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <img src="${item.seller.avatar}" class="w-10 h-10 rounded-full object-cover">
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1">
+                                                ${item.seller.name}
+                                                ${item.seller.isVerified ? '<i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>' : ''}
+                                            </div>
+                                            <div class="text-[11px] text-amber-500 flex items-center gap-1">
+                                                <i class="fa-solid fa-star"></i> ${item.seller.rating} Rating
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-200">Local Neighbor</span>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                                <button onclick="toggleFavorite('${item.id}'); openItemModal('${item.id}');" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 font-semibold text-sm">
+                                    <i class="fa-${isFav ? 'solid text-rose-500' : 'regular'} fa-heart"></i>
+                                    <span>${isFav ? 'Saved' : 'Save'}</span>
+                                </button>
+
+                                <button onclick="startChatFromItem('${item.id}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                    <span>Message / Make Offer</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                `;
-                gridContainer.appendChild(card);
-            });
-        }
+                </div>
+            `;
 
-        // ITEM DETAILS MODAL & OFFER SYSTEM
-        function openItemModal(itemId) {
-            selectedItem = items.find(i => i.id === itemId);
-            if (!selectedItem) return;
-
-            document.getElementById('modalItemImage').src = selectedItem.image;
-            document.getElementById('modalItemTitle').textContent = selectedItem.title;
-            document.getElementById('modalItemPrice').textContent = `$${selectedItem.price}`;
-            document.getElementById('modalItemCategory').textContent = selectedItem.category;
-            document.getElementById('modalItemLocation').textContent = `${selectedItem.neighborhood}, TX`;
-            document.getElementById('modalItemCondition').querySelector('span').textContent = selectedItem.condition;
-            document.getElementById('modalItemPickup').querySelector('span').textContent = selectedItem.pickup;
-            document.getElementById('modalItemDescription').textContent = selectedItem.description;
-            
-            document.getElementById('modalSellerName').textContent = selectedItem.seller;
-            document.getElementById('modalSellerAvatar').textContent = selectedItem.sellerAvatar;
-            document.getElementById('modalSellerRating').textContent = selectedItem.sellerRating;
-
-            document.getElementById('offerAmountInput').value = selectedItem.price;
-            document.getElementById('offerMessageInput').value = '';
-
-            document.getElementById('itemModal').classList.remove('hidden');
+            modal.classList.remove('hidden');
         }
 
         function closeItemModal() {
             document.getElementById('itemModal').classList.add('hidden');
         }
 
-        function submitOffer() {
-            if (!selectedItem) return;
+        function renderSellerDashboard() {
+            const container = document.getElementById('sellerListingsContainer');
+            const countEl = document.getElementById('userListingCount');
+            const myItems = items.filter(i => i.seller.isCurrentUser);
 
-            const offerAmount = document.getElementById('offerAmountInput').value;
-            const messageText = document.getElementById('offerMessageInput').value;
+            if (countEl) countEl.innerText = myItems.length;
 
-            if (!offerAmount || offerAmount <= 0) {
-                alert("Please enter a valid offer price.");
+            if (myItems.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">You haven't posted any items for sale yet.</div>`;
                 return;
             }
 
-            const newMsg = {
-                id: Date.now().toString(),
-                itemId: selectedItem.id,
-                itemTitle: selectedItem.title,
-                itemPrice: selectedItem.price,
-                offerPrice: offerAmount,
-                sellerName: selectedItem.seller,
-                text: messageText || `Offered $${offerAmount} for ${selectedItem.title}`,
-                timestamp: 'Just now',
-                unread: true
-            };
+            container.innerHTML = myItems.map(item => {
+                const hasDiscount = item.originalPrice && item.price < item.originalPrice;
+                return `
+                    <div class="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <img src="${item.image}" class="w-16 h-16 rounded-xl object-cover border border-slate-200">
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">${item.title}</h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="font-extrabold text-slate-900">$${item.price.toFixed(2)}</span>
+                                    ${hasDiscount ? `<span class="text-xs text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded-full">Price Cut Active</span>` : ''}
+                                    ${item.isFeatured ? `<span class="text-xs text-amber-700 font-extrabold bg-amber-100 px-2 py-0.5 rounded-full"><i class="fa-solid fa-bolt"></i> Promoted</span>` : ''}
+                                </div>
+                                <div class="text-xs text-slate-400 mt-1">
+                                    ${item.neighborhood} &bull; Updated ${new Date(item.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
+                            </div>
+                        </div>
 
-            messages.unshift(newMsg);
-            try {
-                localStorage.setItem('yardsale_messages', JSON.stringify(messages));
-            } catch(e){}
+                        <!-- Dashboard Controls -->
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <!-- Edit Price Discount -->
+                            <button onclick="openPriceModal('${item.id}')" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1">
+                                <i class="fa-solid fa-tag text-emerald-600"></i> Edit / Cut Price
+                            </button>
 
-            updateInboxBadge();
-            closeItemModal();
+                            <!-- Bump / Promote Button -->
+                            <button onclick="bumpListing('${item.id}')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-up-to-line"></i> Bump to Top
+                            </button>
 
-            // Open inbox to confirm
-            openInboxModal();
-        }
-
-        // INBOX MODAL
-        function openInboxModal() {
-            renderInboxList();
-            document.getElementById('inboxModal').classList.remove('hidden');
-            
-            // Mark all as read
-            messages.forEach(m => m.unread = false);
-            updateInboxBadge();
-        }
-
-        function closeInboxModal() {
-            document.getElementById('inboxModal').classList.add('hidden');
-        }
-
-        function updateInboxBadge() {
-            const unreadCount = messages.filter(m => m.unread).length;
-            const badge = document.getElementById('unreadBadge');
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-
-        function renderInboxList() {
-            const container = document.getElementById('inboxList');
-            container.innerHTML = '';
-
-            if (messages.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-10 text-slate-400">
-                        <i class="fa-solid fa-comments text-3xl mb-2"></i>
-                        <p class="text-xs">No sent offers or messages yet.</p>
+                            <!-- Delete -->
+                            <button onclick="deleteListing('${item.id}')" class="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 text-xs transition-colors">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
-                return;
-            }
-
-            messages.forEach(msg => {
-                const el = document.createElement('div');
-                el.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-1 text-xs";
-                el.innerHTML = `
-                    <div class="flex justify-between items-center font-bold text-slate-800">
-                        <span>To: ${msg.sellerName}</span>
-                        <span class="text-emerald-700">$${msg.offerPrice} Offered</span>
-                    </div>
-                    <div class="text-slate-600 font-medium">Re: ${msg.itemTitle}</div>
-                    <div class="text-slate-500 italic bg-white p-2 rounded border border-slate-100">${msg.text}</div>
-                    <div class="text-[10px] text-slate-400 text-right">${msg.timestamp}</div>
-                `;
-                container.appendChild(el);
-            });
+            }).join('');
         }
 
-        // POST NEW ITEM MODAL
-        function openPostItemModal() {
-            document.getElementById('postItemModal').classList.remove('hidden');
-        }
-
-        function closePostItemModal() {
-            document.getElementById('postItemModal').classList.add('hidden');
-            document.getElementById('postItemForm').reset();
-            document.getElementById('imagePreviewContainer').classList.add('hidden');
-            uploadedImageBase64 = null;
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    uploadedImageBase64 = e.target.result;
-                    document.getElementById('imagePreview').src = uploadedImageBase64;
-                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
+        function bumpListing(id) {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item.updatedAt = Date.now();
+                item.isFeatured = true;
+                renderApp();
+                showNotification(`"${item.title}" was bumped to top & marked as Promoted!`);
             }
         }
 
-        function handlePostItem(event) {
-            event.preventDefault();
+        function openPriceModal(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
 
+            document.getElementById('discountItemId').value = item.id;
+            document.getElementById('discountOriginalPrice').value = `$${item.price.toFixed(2)}`;
+            document.getElementById('discountNewPrice').value = '';
+            document.getElementById('priceModal').classList.remove('hidden');
+        }
+
+        function closePriceModal() {
+            document.getElementById('priceModal').classList.add('hidden');
+        }
+
+        function savePriceDiscount() {
+            const id = document.getElementById('discountItemId').value;
+            const newPriceVal = parseFloat(document.getElementById('discountNewPrice').value);
+            const item = items.find(i => i.id === id);
+
+            if (item && !isNaN(newPriceVal) && newPriceVal > 0) {
+                if (!item.originalPrice || item.originalPrice <= newPriceVal) {
+                    item.originalPrice = item.price; // store prior price
+                }
+                item.price = newPriceVal;
+                item.updatedAt = Date.now();
+                closePriceModal();
+                renderApp();
+                showNotification(`Price updated! Price Cut badge applied to ${item.title}.`);
+            }
+        }
+
+        function deleteListing(id) {
+            items = items.filter(i => i.id !== id);
+            renderApp();
+            showNotification('Listing removed successfully');
+        }
+
+        function openPostModal() {
+            document.getElementById('postModal').classList.remove('hidden');
+        }
+
+        function closePostModal() {
+            document.getElementById('postModal').classList.add('hidden');
+        }
+
+        function handleCreateListing(e) {
+            e.preventDefault();
             const title = document.getElementById('postTitle').value;
             const price = parseFloat(document.getElementById('postPrice').value);
-            const category = document.getElementById('postCategory').value;
             const condition = document.getElementById('postCondition').value;
             const neighborhood = document.getElementById('postNeighborhood').value;
-            const pickup = document.getElementById('postPickup').value;
-            const urlInput = document.getElementById('postImageUrl').value;
+            const fulfillment = document.getElementById('postFulfillment').value;
+            let image = document.getElementById('postImage').value;
             const description = document.getElementById('postDescription').value;
 
-            // Determine image source
-            let finalImage = 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
-            if (uploadedImageBase64) {
-                finalImage = uploadedImageBase64;
-            } else if (urlInput.trim() !== '') {
-                finalImage = urlInput.trim();
+            if (!image) {
+                image = 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
             }
-
-            // Assign standard lat/lng coordinates based on neighborhood for realistic map pin
-            let lat = 29.9749;
-            let lng = -93.9935;
-            if (neighborhood === 'Groves') { lat = 29.9488; lng = -93.9168; }
-            if (neighborhood === 'West Beaumont') { lat = 30.0802; lng = -94.1266; }
-            if (neighborhood === 'Orange County') { lat = 30.0991; lng = -93.7360; }
 
             const newItem = {
                 id: Date.now().toString(),
                 title,
                 price,
-                category,
+                originalPrice: price,
                 condition,
                 neighborhood,
-                pickup,
-                seller: 'Current User',
-                sellerAvatar: 'ME',
-                sellerRating: '5.0',
-                image: finalImage,
+                fulfillment,
+                isFeatured: false,
+                updatedAt: Date.now(),
+                seller: {
+                    name: 'Sarah Jenkins',
+                    rating: 5.0,
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                    isVerified: true,
+                    isCurrentUser: true
+                },
+                image,
                 description,
-                lat: lat + (Math.random() - 0.5) * 0.02,
-                lng: lng + (Math.random() - 0.5) * 0.02
+                lat: 29.97 + (Math.random() - 0.5) * 0.08,
+                lng: -93.98 + (Math.random() - 0.5) * 0.08
             };
 
             items.unshift(newItem);
-            applyFilters();
-            closePostItemModal();
-
-            // Switch to grid view to view new item
-            switchView('grid');
+            closePostModal();
+            switchTab('dashboard');
+            showNotification('Your listing is live on YardSale Hub!');
         }
 
-        // SELLER DASHBOARD
-        function openUserModal() {
-            renderMyListings();
-            document.getElementById('userModal').classList.remove('hidden');
+        function startChatFromItem(itemId) {
+            closeItemModal();
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            // Check existing thread or create
+            let thread = chatThreads.find(t => t.itemId === itemId);
+            if (!thread) {
+                thread = {
+                    id: 't_' + Date.now(),
+                    itemId: item.id,
+                    buyerName: 'You',
+                    sellerName: item.seller.name,
+                    itemTitle: item.title,
+                    itemPrice: item.price,
+                    messages: [
+                        { sender: 'You', text: `Hi ${item.seller.name}, is this item still available for pickup/shipping?`, time: 'Just now' }
+                    ]
+                };
+                chatThreads.unshift(thread);
+            }
+
+            activeThreadId = thread.id;
+            switchTab('messages');
         }
 
-        function closeUserModal() {
-            document.getElementById('userModal').classList.add('hidden');
-        }
+        function renderChatInbox() {
+            const threadList = document.getElementById('chatThreadList');
+            const activeHeader = document.getElementById('activeChatHeader');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatInputArea = document.getElementById('chatInputArea');
 
-        function renderMyListings() {
-            const container = document.getElementById('myListingsContainer');
-            container.innerHTML = '';
+            threadList.innerHTML = chatThreads.map(t => {
+                const isActive = t.id === activeThreadId;
+                const lastMsg = t.messages[t.messages.length - 1];
+                return `
+                    <div onclick="selectChatThread('${t.id}')" class="p-3.5 cursor-pointer hover:bg-slate-100 transition-colors ${isActive ? 'bg-emerald-50 border-l-4 border-emerald-600' : ''}">
+                        <div class="flex justify-between items-start">
+                            <span class="font-bold text-xs sm:text-sm text-slate-800">${t.sellerName}</span>
+                            <span class="text-[10px] text-slate-400">${lastMsg ? lastMsg.time : ''}</span>
+                        </div>
+                        <div class="text-xs font-semibold text-emerald-700 truncate mt-0.5">${t.itemTitle}</div>
+                        <div class="text-xs text-slate-500 truncate mt-1">${lastMsg ? lastMsg.text : 'No messages'}</div>
+                    </div>
+                `;
+            }).join('');
 
-            const myList = items.filter(i => i.seller === 'Current User');
+            const activeThread = chatThreads.find(t => t.id === activeThreadId);
 
-            if (myList.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400">You have no active listings. Click "Sell Item" to post one!</p>`;
+            if (!activeThread) {
+                activeHeader.innerHTML = `<span class="text-slate-400 text-sm">Select a chat to begin</span>`;
+                chatMessages.innerHTML = `<div class="text-center text-slate-400 text-sm py-20">No conversation selected</div>`;
+                chatInputArea.classList.add('hidden');
                 return;
             }
 
-            myList.forEach(item => {
-                const el = document.createElement('div');
-                el.className = "flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 text-xs";
-                el.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <img src="${item.image}" class="w-10 h-10 rounded object-cover">
-                        <div>
-                            <div class="font-bold text-slate-800">${item.title}</div>
-                            <div class="text-emerald-700 font-bold">$${item.price} • ${item.condition}</div>
-                        </div>
-                    </div>
-                    <button onclick="deleteListing('${item.id}')" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 rounded">
-                        Delete
-                    </button>
-                `;
-                container.appendChild(el);
-            });
-        }
-
-        function deleteListing(id) {
-            items = items.filter(i => i.id !== id);
-            applyFilters();
-            renderMyListings();
-        }
-
-        // PUBLIC SELLER PROFILE MODAL
-        function openPublicSellerModal() {
-            if (!selectedItem) return;
-            document.getElementById('pubSellerName').textContent = selectedItem.seller;
-            document.getElementById('pubSellerAvatar').textContent = selectedItem.sellerAvatar;
-            document.getElementById('publicSellerModal').classList.remove('hidden');
-        }
-
-        function closePublicSellerModal() {
-            document.getElementById('publicSellerModal').classList.add('hidden');
-        }
-    </script>
-</body>
-</html>
+            activeHeader.innerHTML = `
+                <div>
+                    <div class="font-bold text-slate-800 text-sm">${activeThread.sellerName}</div>
+                    <div class="text-xs text-emerald-600 font-medium">Re: ${activeThread.itemTitle} ($${activeThread.itemPrice})</div>
+                </div>
