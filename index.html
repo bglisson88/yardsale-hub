@@ -27,12 +27,12 @@
         </div>
       </div>
       <div class="flex items-center space-x-3">
-        <!-- TOP LIST ITEM BUTTON WITH DIRECT ONCLICK -->
+        <!-- TOP LIST ITEM BUTTON -->
         <button onclick="toggleModal(true)" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow cursor-pointer active:scale-95">
           <i class="fa-solid fa-plus"></i>
           <span>List Item</span>
         </button>
-        <button onclick="viewBundle()" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
+        <button onclick="viewBundle()" type="button" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
           <i class="fa-solid fa-basket-shopping"></i>
           <span class="hidden sm:inline">Bundle</span>
           <span id="cartBadge" class="bg-amber-400 text-slate-900 font-bold rounded-full text-xs w-5 h-5 flex items-center justify-center">0</span>
@@ -50,10 +50,10 @@
           <p class="text-slate-600 text-sm mt-1">Browse neighborhood sales in Nederland, Groves, and West Beaumont.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm">All Items</button>
-          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Furniture</button>
-          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Electronics</button>
-          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Tools & Lawn</button>
+          <button type="button" class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm">All Items</button>
+          <button type="button" class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Furniture</button>
+          <button type="button" class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Electronics</button>
+          <button type="button" class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Tools & Lawn</button>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@
           </div>
           <h3 class="font-bold text-slate-900 text-lg mb-2">Vintage Sofa Couch</h3>
           <p class="text-slate-600 text-sm line-clamp-2 mb-4">Great condition, solid wooden frame with retro green fabric.</p>
-          <button onclick="addToBundle('Vintage Sofa Couch', 45)" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
+          <button onclick="addToBundle('Vintage Sofa Couch', 45)" type="button" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>Add to Bundle Offer</span>
           </button>
@@ -98,7 +98,7 @@
           </div>
           <h3 class="font-bold text-slate-900 text-lg mb-2">Wireless Headphones</h3>
           <p class="text-slate-600 text-sm line-clamp-2 mb-4">Barely used, includes original charging case and cable.</p>
-          <button onclick="addToBundle('Wireless Headphones', 20)" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
+          <button onclick="addToBundle('Wireless Headphones', 20)" type="button" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>Add to Bundle Offer</span>
           </button>
@@ -108,7 +108,7 @@
     </div>
   </main>
 
-  <!-- FLOATING ACTION BUTTON WITH DIRECT ONCLICK -->
+  <!-- FLOATING ACTION BUTTON -->
   <button onclick="toggleModal(true)" type="button" class="md:hidden fixed bottom-6 right-6 bg-emerald-600 text-white font-bold px-5 py-4 rounded-full shadow-2xl flex items-center space-x-2 z-50 active:scale-95 transition cursor-pointer">
     <i class="fa-solid fa-camera text-xl"></i>
     <span class="text-base">Sell Item</span>
@@ -182,62 +182,64 @@
     </div>
   </div>
 
-  <!-- Global Application Logic -->
+  <!-- JavaScript Logic -->
   <script>
-    // Explicitly define global state
-    window.bundle = [];
+    var bundle = [];
 
-    // Explicitly bind functions to the global window object
-    window.toggleModal = function(show) {
-      const modal = document.getElementById('sellerModal');
+    function toggleModal(show) {
+      var modal = document.getElementById('sellerModal');
       if (!modal) return;
       if (show) {
         modal.classList.remove('hidden');
       } else {
         modal.classList.add('hidden');
       }
-    };
+    }
 
-    window.handleOverlayClick = function(e) {
+    function handleOverlayClick(e) {
       if (e.target.id === 'sellerModal') {
-        window.toggleModal(false);
+        toggleModal(false);
       }
-    };
+    }
 
-    window.setPhoto = function(url) {
-      const input = document.getElementById('itemPhoto');
+    function setPhoto(url) {
+      var input = document.getElementById('itemPhoto');
       if (input) input.value = url;
-    };
+    }
 
-    window.addToBundle = function(title, price) {
-      window.bundle.push({ title, price });
-      const badge = document.getElementById('cartBadge');
-      if (badge) badge.innerText = window.bundle.length;
-      alert(Added "${title}" ($${price}) to your bundle!);
-    };
+    function addToBundle(title, price) {
+      bundle.push({ title: title, price: price });
+      var badge = document.getElementById('cartBadge');
+      if (badge) badge.innerText = bundle.length;
+      alert('Added "' + title + '" ($' + price + ') to your bundle!');
+    }
 
-    window.viewBundle = function() {
-      if (window.bundle.length === 0) {
+    function viewBundle() {
+      if (bundle.length === 0) {
         alert('Your bundle is empty! Tap "Add to Bundle Offer" on items first.');
       } else {
-        let itemsList = window.bundle.map(item => • ${item.title} ($${item.price})).join('\n');
-        let total = window.bundle.reduce((sum, item) => sum + item.price, 0);
-        let discount = Math.round(total * 0.85);
-        alert(Your Selected Bundle Items:\n\n${itemsList}\n\nTotal: $${total}\nSuggested Package Offer: $${discount});
+        var itemsList = bundle.map(function(item) {
+          return '• ' + item.title + ' ($' + item.price + ')';
+        }).join('\n');
+        var total = bundle.reduce(function(sum, item) {
+          return sum + item.price;
+        }, 0);
+        var discount = Math.round(total * 0.85);
+        alert('Your Selected Bundle Items:\n\n' + itemsList + '\n\nTotal: $' + total + '\nSuggested Package Offer:$' + discount);
       }
-    };
+    }
 
-    window.handleFormSubmit = function(e) {
+    function handleFormSubmit(e) {
       e.preventDefault();
 
-      const title = document.getElementById('itemTitle').value;
-      const price = document.getElementById('itemPrice').value;
-      const location = document.getElementById('itemLocation').value;
-      const pickup = document.getElementById('pickupType').value;
-      const photo = document.getElementById('itemPhoto').value;
-      const desc = document.getElementById('itemDesc').value || 'Available for local pickup.';
+      var title = document.getElementById('itemTitle').value;
+      var price = document.getElementById('itemPrice').value;
+      var location = document.getElementById('itemLocation').value;
+      var pickup = document.getElementById('pickupType').value;
+      var photo = document.getElementById('itemPhoto').value;
+      var desc = document.getElementById('itemDesc').value || 'Available for local pickup.';
 
-      const newCard = document.createElement('div');
+      var newCard = document.createElement('div');
       newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
       newCard.innerHTML = `
         <div class="relative h-48 bg-slate-100">
@@ -253,18 +255,20 @@
           </div>
           <h3 class="font-bold text-slate-900 text-lg mb-2">${title}</h3>
           <p class="text-slate-600 text-sm line-clamp-2 mb-4">${desc}</p>
-          <button onclick="addToBundle('${title}', ${price})" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+          <button onclick="addToBundle('${title.replace(/'/g, "\\'")}', ${price})" type="button" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>Add to Bundle Offer</span>
           </button>
         </div>
       `;
 
-      const grid = document.getElementById('itemsGrid');
+      var grid = document.getElementById('itemsGrid');
       if (grid) grid.insertBefore(newCard, grid.firstChild);
 
       document.getElementById('itemForm').reset();
-      window.toggleModal(false);
+      toggleModal(false);
       alert('Your item has been published to the neighborhood marketplace!');
-    };
+    }
   </script>
+</body>
+</html>
