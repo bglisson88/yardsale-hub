@@ -157,15 +157,35 @@
           </select>
         </div>
 
+        <!-- DIRECT FILE UPLOAD SECTION -->
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Photo URL *</label>
-          <input type="url" id="itemPhoto" required placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          <p class="text-[11px] text-slate-500 mt-1">Tap a sample photo below to quick-fill:</p>
+          <label class="block font-semibold text-slate-700 mb-1">Item Photo *</label>
           
-          <div class="flex gap-2 mt-2">
-            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
-            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
-            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
+          <!-- Hidden Input for Store Data URL -->
+          <input type="hidden" id="itemPhotoData" value="">
+
+          <!-- File Upload Zone -->
+          <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50 rounded-xl p-4 text-center cursor-pointer transition relative" id="uploadDropzone">
+            <input type="file" id="photoFileInput" accept="image/*" onchange="handleFileSelect(event)" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10">
+            <div id="uploadPlaceholder" class="flex flex-col items-center justify-center space-y-1">
+              <i class="fa-solid fa-cloud-arrow-up text-emerald-600 text-2xl mb-1"></i>
+              <p class="text-sm font-semibold text-emerald-900">Tap to upload photo or snap picture</p>
+              <p class="text-xs text-slate-500">JPG, PNG, WEBP from phone camera or gallery</p>
+            </div>
+            <!-- Image Preview Box -->
+            <div id="imagePreviewContainer" class="hidden relative w-full h-40 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+              <img id="imagePreview" src="" alt="Upload Preview" class="w-full h-full object-cover">
+              <button type="button" onclick="clearSelectedPhoto(event)" class="absolute top-2 right-2 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full p-1.5 text-xs shadow z-20">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-500 mt-2">Or choose a preset demo image:</p>
+          <div class="flex gap-2 mt-1">
+            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
+            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
+            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
           </div>
         </div>
 
@@ -202,9 +222,38 @@
       }
     }
 
-    function setPhoto(url) {
-      var input = document.getElementById('itemPhoto');
-      if (input) input.value = url;
+    // Handles Direct File Upload from Device Gallery / Camera
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        showPhotoPreview(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Sets preset sample image
+    function setPresetPhoto(url) {
+      showPhotoPreview(url);
+    }
+
+    function showPhotoPreview(url) {
+      document.getElementById('itemPhotoData').value = url;
+      document.getElementById('imagePreview').src = url;
+      document.getElementById('uploadPlaceholder').classList.add('hidden');
+      document.getElementById('imagePreviewContainer').classList.remove('hidden');
+    }
+
+    function clearSelectedPhoto(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('itemPhotoData').value = '';
+      document.getElementById('photoFileInput').value = '';
+      document.getElementById('imagePreview').src = '';
+      document.getElementById('uploadPlaceholder').classList.remove('hidden');
+      document.getElementById('imagePreviewContainer').classList.add('hidden');
     }
 
     function addToBundle(title, price) {
@@ -236,8 +285,13 @@
       var price = document.getElementById('itemPrice').value;
       var location = document.getElementById('itemLocation').value;
       var pickup = document.getElementById('pickupType').value;
-      var photo = document.getElementById('itemPhoto').value;
+      var photo = document.getElementById('itemPhotoData').value;
       var desc = document.getElementById('itemDesc').value || 'Available for local pickup.';
+
+      if (!photo) {
+        alert('Please choose or upload a photo for your listing!');
+        return;
+      }
 
       var newCard = document.createElement('div');
       newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
@@ -266,6 +320,7 @@
       if (grid) grid.insertBefore(newCard, grid.firstChild);
 
       document.getElementById('itemForm').reset();
+      clearSelectedPhoto();
       toggleModal(false);
       alert('Your item has been published to the neighborhood marketplace!');
     }
