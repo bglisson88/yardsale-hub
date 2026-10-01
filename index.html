@@ -1,1052 +1,689 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YardSale Hub - Local Buy & Sell Marketplace</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet.js CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        
-        /* Custom Leaflet Map Pin Styles */
-        .seller-marker {
-            width: 42px !important;
-            height: 42px !important;
-            border-radius: 50%;
-            border: 3px solid #2563eb;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            background-color: white;
-            object-fit: cover;
-            transition: transform 0.2s ease;
-        }
-        .seller-marker:hover {
-            transform: scale(1.15);
-            border-color: #1d4ed8;
-            z-index: 1000 !important;
-        }
-        .leaflet-popup-content-wrapper {
-            border-radius: 1rem;
-            padding: 4px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YardSale Hub - Mid-County & Orange County</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    #leafletMap { height: 100%; width: 100%; min-height: 520px; z-index: 1; }
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .custom-avatar-pin {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 3px solid #059669; background: #ffffff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3); overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .custom-avatar-pin img { width: 100%; height: 100%; object-fit: cover; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 gap-4">
-                
-                <!-- Logo -->
-                <div class="flex items-center gap-3 cursor-pointer" onclick="resetFilters()">
-                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
-                        <i class="fa-solid fa-store"></i>
-                    </div>
-                    <div>
-                        <span class="font-bold text-xl tracking-tight text-gray-900 block leading-none">YardSale<span class="text-blue-600">Hub</span></span>
-                        <span class="text-xs text-gray-500 font-medium">Local Buy & Sell Marketplace</span>
-                    </div>
-                </div>
-
-                <!-- View Switcher Tabs (Grid vs Map) -->
-                <div class="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200">
-                    <button id="view-grid-btn" onclick="switchView('grid')" class="px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition bg-white text-blue-600 shadow-sm">
-                        <i class="fa-solid fa-border-all"></i> Grid
-                    </button>
-                    <button id="view-map-btn" onclick="switchView('map')" class="px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition text-gray-600 hover:text-gray-900">
-                        <i class="fa-solid fa-map-location-dot"></i> Map View
-                    </button>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-3">
-                    <!-- Favorites Filter Button -->
-                    <button id="fav-filter-btn" onclick="toggleSavedFilter()" class="p-2.5 sm:px-3.5 sm:py-2 rounded-xl text-sm font-semibold border border-gray-200 hover:bg-gray-100 text-gray-700 flex items-center gap-2 transition relative">
-                        <i id="fav-filter-icon" class="fa-regular fa-heart text-red-500 text-lg"></i>
-                        <span class="hidden sm:inline">Saved</span>
-                        <span id="fav-count-badge" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full hidden">0</span>
-                    </button>
-
-                    <!-- Sell Button -->
-                    <button onclick="handleSellClick()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition flex items-center gap-2 text-sm">
-                        <i class="fa-solid fa-plus"></i>
-                        <span class="hidden sm:inline">Sell</span>
-                    </button>
-
-                    <!-- Account / Auth Button -->
-                    <button id="user-auth-btn" onclick="handleAuthButtonClick()" class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold px-3 py-1.5 rounded-xl transition border border-gray-200 text-sm">
-                        <i class="fa-regular fa-circle-user text-xl text-gray-600"></i>
-                        <span>Sign In</span>
-                    </button>
-                </div>
-            </div>
+  <!-- Header -->
+  <header class="bg-emerald-600 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      
+      <!-- Logo -->
+      <div onclick="resetFilters()" class="flex items-center space-x-2.5 cursor-pointer flex-shrink-0">
+        <div class="bg-white text-emerald-600 w-9 h-9 rounded-xl font-black text-lg shadow flex items-center justify-center">
+          <i class="fa-solid fa-tags"></i>
         </div>
-    </header>
-
-    <section class="bg-white border-b border-gray-200 py-3 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
-            <div class="flex flex-col md:flex-row gap-3 items-center justify-between">
-                
-                <!-- Search Bar -->
-                <div class="relative w-full md:w-96">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="search-input" oninput="applyFilters()" placeholder="Search tools, furniture, electronics..." class="w-full pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                </div>
-
-                <!-- Secondary Filters -->
-                <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                    <!-- Neighborhood Select -->
-                    <select id="neighborhood-filter" onchange="applyFilters()" class="bg-gray-100 border border-gray-200 text-gray-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="All">All Neighborhoods</option>
-                        <option value="Nederland">Nederland</option>
-                        <option value="Groves">Groves</option>
-                        <option value="West Beaumont">West Beaumont</option>
-                        <option value="Orange County">Orange County</option>
-                    </select>
-
-                    <!-- Fulfillment Select -->
-                    <select id="fulfillment-filter" onchange="applyFilters()" class="bg-gray-100 border border-gray-200 text-gray-700 text-xs sm:text-sm rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="All">All Fulfillment</option>
-                        <option value="Local Pickup">Local Pickup Only</option>
-                        <option value="Shipping Available">Shipping Available</option>
-                    </select>
-
-                    <!-- Mobile View Switcher -->
-                    <div class="flex md:hidden bg-gray-100 p-1 rounded-xl border border-gray-200 shrink-0 ml-auto">
-                        <button id="mobile-view-grid-btn" onclick="switchView('grid')" class="px-3 py-1 rounded-lg text-xs font-semibold bg-white text-blue-600 shadow-sm">Grid</button>
-                        <button id="mobile-view-map-btn" onclick="switchView('map')" class="px-3 py-1 rounded-lg text-xs font-semibold text-gray-600">Map</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Category Pills -->
-            <div class="flex items-center gap-2 overflow-x-auto pt-1 no-scrollbar text-xs sm:text-sm">
-                <button onclick="setCategoryFilter('All', this)" class="cat-btn px-4 py-1.5 rounded-full font-medium bg-blue-600 text-white transition shrink-0">All Items</button>
-                <button onclick="setCategoryFilter('Tools', this)" class="cat-btn px-4 py-1.5 rounded-full font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0">Tools</button>
-                <button onclick="setCategoryFilter('Furniture', this)" class="cat-btn px-4 py-1.5 rounded-full font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0">Furniture</button>
-                <button onclick="setCategoryFilter('Electronics', this)" class="cat-btn px-4 py-1.5 rounded-full font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0">Electronics</button>
-                <button onclick="setCategoryFilter('Apparel', this)" class="cat-btn px-4 py-1.5 rounded-full font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0">Apparel</button>
-            </div>
+        <div>
+          <h1 class="text-lg font-black tracking-tight leading-none">YardSale Hub</h1>
+          <p class="text-[9px] text-emerald-100 font-bold uppercase tracking-wider">Mid-County Marketplace</p>
         </div>
-    </section>
+      </div>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative">
+      <!-- Search Bar -->
+      <div class="hidden md:flex flex-1 max-w-md relative">
+        <input type="text" id="searchInput" oninput="renderGrid()" placeholder="Search tools, furniture, electronics..." class="w-full pl-9 pr-4 py-2 rounded-full bg-emerald-700/60 text-white placeholder-emerald-200 border border-emerald-500 focus:outline-none focus:bg-white focus:text-slate-900 text-xs transition">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-emerald-200 text-xs"></i>
+      </div>
+
+      <!-- Navigation & Action Buttons -->
+      <div class="flex items-center space-x-2">
         
-        <!-- Grid Container -->
-        <div id="grid-view" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <!-- Dynamic Item Cards Inserted Here -->
+        <!-- Grid / Map Toggle -->
+        <div class="bg-emerald-700/60 p-1 rounded-lg flex items-center border border-emerald-500/40">
+          <button id="viewGridBtn" onclick="switchMainView('grid')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-white text-emerald-700 shadow">Grid</button>
+          <button id="viewMapBtn" onclick="switchMainView('map')" class="px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-100 hover:text-white">Map</button>
         </div>
 
-        <!-- Map Container (Hidden by Default) -->
-        <div id="map-view" class="hidden w-full h-[650px] rounded-2xl overflow-hidden border border-gray-200 shadow-md relative">
-            <div id="map" class="w-full h-full z-10"></div>
-        </div>
+        <!-- Saved / Favorites Button -->
+        <button id="favoritesNavBtn" onclick="toggleFavoritesFilter()" type="button" class="bg-emerald-700 hover:bg-emerald-800 text-white p-2 sm:px-3 sm:py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-1">
+          <i class="fa-solid fa-heart text-rose-300"></i>
+          <span class="hidden lg:inline">Saved</span>
+        </button>
 
-        <!-- Empty State Message -->
-        <div id="empty-state" class="hidden text-center py-16">
-            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-3xl">
-                <i class="fa-solid fa-box-open"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">No items found</h3>
-            <p class="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms.</p>
-            <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition">Reset All Filters</button>
-        </div>
-    </main>
+        <!-- Account / Sign In / Dashboard Button -->
+        <button id="accountNavBtn" onclick="handleAccountNavClick()" type="button" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 border border-emerald-500/50">
+          <img id="navAvatarImg" src="" class="w-5 h-5 rounded-full object-cover hidden border border-white">
+          <i id="navDefaultIcon" class="fa-solid fa-circle-user text-sm"></i>
+          <span id="accountNavText">Sign In</span>
+        </button>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-            <p>&copy; 2026 YardSale Hub. Local community buy & sell network.</p>
-        </div>
-    </footer>
-
-    
-    <!-- 1. AUTH MODAL -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-fade-in">
-            <button onclick="closeModal('auth-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 text-xl">&times;</button>
-            
-            <!-- Auth Tab Buttons -->
-            <div class="flex border-b border-gray-200 mb-6">
-                <button id="tab-signin-btn" onclick="switchAuthTab('signin')" class="flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600">Sign In</button>
-                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-3 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">Create Account</button>
-            </div>
-
-            <!-- Sign In Form -->
-            <form id="signin-form" onsubmit="handleSignIn(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Username</label>
-                    <input type="text" id="signin-username" required placeholder="e.g. john_doe" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition">Sign In</button>
-            </form>
-
-            <!-- Register Form -->
-            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Display Name</label>
-                    <input type="text" id="reg-name" required placeholder="e.g. John Doe" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Username</label>
-                    <input type="text" id="reg-username" required placeholder="e.g. john_doe" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Neighborhood</label>
-                    <select id="reg-neighborhood" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="Nederland">Nederland</option>
-                        <option value="Groves">Groves</option>
-                        <option value="West Beaumont">West Beaumont</option>
-                        <option value="Orange County">Orange County</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Profile Avatar URL (Optional)</label>
-                    <input type="url" id="reg-avatar" placeholder="https://..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-400 mt-1">Leaves empty to use default SVG logo avatar.</p>
-                </div>
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition">Create Account</button>
-            </form>
-        </div>
+        <!-- Sell Button -->
+        <button onclick="handleSellButtonClick()" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-3 py-2 rounded-lg text-xs transition flex items-center space-x-1 shadow cursor-pointer">
+          <i class="fa-solid fa-camera"></i>
+          <span class="hidden sm:inline">Sell</span>
+        </button>
+      </div>
     </div>
+  </header>
 
-    <!-- 2. MY YARD SALE DASHBOARD MODAL -->
-    <div id="dashboard-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
-            <button onclick="closeModal('dashboard-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 text-xl">&times;</button>
-            
-            <!-- User Profile Banner -->
-            <div class="flex items-center gap-4 bg-blue-50 border border-blue-100 p-4 rounded-2xl mb-6 shrink-0">
-                <img id="dash-user-avatar" src="" class="w-16 h-16 rounded-full border-2 border-blue-600 object-cover shadow-sm">
-                <div class="flex-1">
-                    <h2 id="dash-user-name" class="font-bold text-xl text-gray-900 leading-tight"></h2>
-                    <p id="dash-user-neighborhood" class="text-xs text-blue-600 font-semibold mt-0.5"><i class="fa-solid fa-location-dot"></i> <span></span></p>
-                </div>
-                <button onclick="handleSignOut()" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold text-xs rounded-xl transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-                </button>
-            </div>
+  <!-- Mobile Search Bar -->
+  <div class="md:hidden bg-emerald-600 px-4 pb-3">
+    <input type="text" id="searchInputMobile" oninput="renderGrid()" placeholder="Search items near you..." class="w-full pl-8 pr-4 py-1.5 rounded-full bg-emerald-700/60 text-white placeholder-emerald-200 border border-emerald-500 focus:outline-none text-xs">
+  </div>
 
-            <!-- Dashboard Tabs -->
-            <div class="flex border-b border-gray-200 mb-4 shrink-0">
-                <button id="dash-items-tab" onclick="switchDashTab('items')" class="py-2.5 px-4 font-bold text-blue-600 border-b-2 border-blue-600 text-sm">My Active Listings</button>
-                <button id="dash-inbox-tab" onclick="switchDashTab('inbox')" class="py-2.5 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 text-sm flex items-center gap-2">
-                    Offers & Inbox
-                    <span id="dash-inbox-badge" class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
-                </button>
-            </div>
+  <!-- Filter Section -->
+  <section class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div>
+        <h2 id="viewTitle" class="text-base font-bold text-slate-900">Local Listings</h2>
+        <p class="text-slate-500 text-[11px]">Nederland • Groves • West Beaumont • Orange County</p>
+      </div>
 
-            <!-- Tab 1: My Active Items List -->
-            <div id="dash-items-view" class="overflow-y-auto flex-1 pr-1 space-y-3">
-                <!-- Dynamically populated -->
-            </div>
+      <!-- Categories & Fulfillment Filters -->
+      <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
+        <select id="fulfillmentFilter" onchange="renderGrid()" class="bg-slate-100 font-bold px-2.5 py-1.5 rounded-full border border-slate-300 text-xs">
+          <option value="All">All Delivery Types</option>
+          <option value="Local Pickup">Local Pickup</option>
+          <option value="Shipping Available">Shipping</option>
+        </select>
 
-            <!-- Tab 2: Offers & Inbox List -->
-            <div id="dash-inbox-view" class="overflow-y-auto flex-1 pr-1 space-y-3 hidden">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
+        <button onclick="filterCategory('All')" class="bg-emerald-100 text-emerald-800 font-bold px-3 py-1.5 rounded-full flex-shrink-0">All</button>
+        <button onclick="filterCategory('Tools')" class="bg-slate-100 text-slate-700 font-semibold px-3 py-1.5 rounded-full hover:bg-slate-200 flex-shrink-0">Tools</button>
+        <button onclick="filterCategory('Furniture')" class="bg-slate-100 text-slate-700 font-semibold px-3 py-1.5 rounded-full hover:bg-slate-200 flex-shrink-0">Furniture</button>
+        <button onclick="filterCategory('Electronics')" class="bg-slate-100 text-slate-700 font-semibold px-3 py-1.5 rounded-full hover:bg-slate-200 flex-shrink-0">Electronics</button>
+      </div>
     </div>
+  </section>
 
-    <!-- 3. POST ITEM FOR SALE MODAL -->
-    <div id="sell-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeModal('sell-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 text-xl">&times;</button>
-            
-            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-tag text-blue-600"></i> Post Item for Sale
-            </h2>
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+    <!-- Grid View -->
+    <div id="itemsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
 
-            <form onsubmit="handleCreateItem(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Title</label>
-                    <input type="text" id="sell-title" required placeholder="e.g. DeWalt Cordless Drill Set" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Price ($)</label>
-                        <input type="number" id="sell-price" min="0" step="0.01" required placeholder="45.00" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Category</label>
-                        <select id="sell-category" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="Tools">Tools</option>
-                            <option value="Furniture">Furniture</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Apparel">Apparel</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Condition</label>
-                        <select id="sell-condition" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="New">New</option>
-                            <option value="Like New">Like New</option>
-                            <option value="Good">Good</option>
-                            <option value="Fair">Fair</option>
-                            <option value="For Parts">For Parts</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Fulfillment</label>
-                        <select id="sell-fulfillment" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="Local Pickup">Local Pickup</option>
-                            <option value="Shipping Available">Shipping Available</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Photo Image URL</label>
-                    <input type="url" id="sell-image" required placeholder="https://images.unsplash.com/photo-..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Description</label>
-                    <textarea id="sell-description" rows="3" required placeholder="Provide details on condition, pickup specs..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition">Publish Listing</button>
-            </form>
-        </div>
+    <!-- Map View -->
+    <div id="mapViewContainer" class="hidden bg-white rounded-2xl border border-slate-200 p-2 shadow-sm h-[550px] relative overflow-hidden">
+      <div id="leafletMap" class="rounded-xl"></div>
     </div>
+  </main>
 
-    <!-- 4. ITEM DETAILS & MAKE OFFER MODAL -->
-    <div id="item-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl relative max-h-[90vh] overflow-y-auto flex flex-col md:flex-row overflow-hidden">
-            <button onclick="closeModal('item-modal')" class="absolute top-3 right-3 text-white md:text-gray-500 bg-black/40 md:bg-transparent rounded-full p-2 text-xl z-20 hover:text-gray-700">&times;</button>
-            
-            <!-- Image Section -->
-            <div class="md:w-1/2 bg-gray-100 relative min-h-[260px]">
-                <img id="detail-img" src="" class="w-full h-full object-cover">
-                <span id="detail-fulfillment" class="absolute bottom-3 left-3 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-lg backdrop-blur-xs"></span>
-            </div>
+  <!-- AUTH MODAL (Sign In / Register) -->
+  <div id="authModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="bg-emerald-600 text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 id="authTitle" class="font-bold text-sm"><i class="fa-solid fa-user-lock mr-2"></i>Sign In</h3>
+        <button onclick="closeModal('authModal')" class="text-white font-bold text-lg cursor-pointer">&times;</button>
+      </div>
 
-            <!-- Details & Offer Section -->
-            <div class="md:w-1/2 p-6 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <span id="detail-category" class="text-xs font-bold text-blue-600 uppercase tracking-wider"></span>
-                            <h2 id="detail-title" class="font-bold text-xl text-gray-900 leading-snug"></h2>
-                        </div>
-                        <span id="detail-price" class="text-xl font-extrabold text-blue-600"></span>
-                    </div>
-
-                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-2 mb-4">
-                        <span id="detail-condition" class="bg-gray-100 px-2.5 py-1 rounded-md font-medium text-gray-700"></span>
-                        <span>•</span>
-                        <span id="detail-location"><i class="fa-solid fa-location-dot"></i> <span></span></span>
-                    </div>
-
-                    <p id="detail-desc" class="text-sm text-gray-600 leading-relaxed mb-6"></p>
-
-                    <!-- Seller Card Info -->
-                    <div class="border-t border-b border-gray-100 py-3 flex items-center gap-3 mb-6">
-                        <img id="detail-seller-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-200">
-                        <div>
-                            <p id="detail-seller-name" class="font-bold text-sm text-gray-800 leading-none"></p>
-                            <p id="detail-seller-hood" class="text-xs text-gray-500 mt-0.5"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Make Offer Form -->
-                <form id="offer-form" onsubmit="handleSendOffer(event)" class="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
-                    <h3 class="text-xs font-bold text-gray-700 uppercase">Make a Cash Offer</h3>
-                    <div class="flex gap-2">
-                        <div class="relative w-1/3">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-sm">$</span>
-                            <input type="number" id="offer-amount" required min="1" step="0.01" placeholder="Offer" class="w-full pl-7 pr-2 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <input type="text" id="offer-msg" placeholder="Message to seller..." required class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition shadow-sm">Send Cash Offer</button>
-                </form>
-            </div>
+      <div class="p-5 text-xs space-y-3">
+        <div class="flex border-b border-slate-200 mb-3">
+          <button id="tabSignInBtn" onclick="switchAuthTab('signin')" class="flex-1 py-1.5 font-bold text-emerald-600 border-b-2 border-emerald-600 text-center">Sign In</button>
+          <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-1.5 font-semibold text-slate-400 text-center">Create Account</button>
         </div>
+
+        <!-- Sign In Form -->
+        <form id="signInForm" onsubmit="handleSignInSubmit(event)" class="space-y-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Username</label>
+            <input type="text" id="signInUser" required placeholder="e.g. NederlandDave" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Password</label>
+            <input type="password" required placeholder="••••••••" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition shadow">Sign In</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Display Name *</label>
+            <input type="text" id="regName" required placeholder="e.g. Dave's Garage Sales" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Username *</label>
+            <input type="text" id="regUser" required placeholder="e.g. NederlandDave" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Location *</label>
+            <select id="regLocation" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white">
+              <option value="Nederland">Nederland</option>
+              <option value="Groves">Groves</option>
+              <option value="West Beaumont">West Beaumont</option>
+              <option value="Orange County">Orange County</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Profile Photo Link (Optional)</label>
+            <input type="url" id="regAvatar" placeholder="Image URL (Leaves default logo if empty)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition shadow">Create Account</button>
+        </form>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // Default SVG Avatar (Data URI)
-        const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232563eb"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-3.8-.85-5.05-2.2.12-1.63 3.37-2.5 5.05-2.5s4.93.87 5.05 2.5C15.8 19.15 14.03 20 12 20z"/></svg>`;
+  <!-- MY YARD SALE DASHBOARD MODAL -->
+  <div id="dashboardModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="bg-emerald-600 text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 class="font-bold text-sm"><i class="fa-solid fa-store mr-2"></i>My Yard Sale</h3>
+        <button onclick="closeModal('dashboardModal')" class="text-white font-bold text-lg cursor-pointer">&times;</button>
+      </div>
 
-        // Neighborhood Map Coordinates (SE Texas area)
-        const HOOD_COORDS = {
-            "Nederland": [29.9749, -93.9924],
-            "Groves": [29.9488, -93.9168],
-            "West Beaumont": [30.0802, -94.1266],
-            "Orange County": [30.0988, -93.7363]
-        };
+      <div class="p-5 text-xs space-y-4">
+        <!-- User Banner -->
+        <div class="p-3 bg-slate-900 text-white rounded-xl flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <img id="dashAvatarImg" src="" class="w-10 h-10 rounded-full object-cover border-2 border-emerald-400">
+            <div>
+              <h4 id="dashName" class="font-bold text-sm">Seller Name</h4>
+              <p id="dashMeta" class="text-[10px] text-emerald-400">Nederland • Verified Seller</p>
+            </div>
+          </div>
+          <button onclick="handleSignOut()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] transition">Sign Out</button>
+        </div>
 
-        // Initial Seed Items
-        const SEED_ITEMS = [
-            {
-                id: "item-1",
-                title: "DeWalt 20V Max Cordless Drill Combo Kit",
-                price: 85.00,
-                category: "Tools",
-                condition: "Like New",
-                neighborhood: "Nederland",
-                fulfillment: "Local Pickup",
-                image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600&auto=format&fit=crop&q=80",
-                description: "Barely used drill and impact driver set. Comes with two batteries and rapid charger.",
-                seller: {
-                    username: "mike_b",
-                    name: "Mike Burnett",
-                    neighborhood: "Nederland",
-                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                },
-                coords: [29.9755, -93.9930],
-                timestamp: Date.now() - 3600000
-            },
-            {
-                id: "item-2",
-                title: "Mid-Century Modern Oak Coffee Table",
-                price: 120.00,
-                category: "Furniture",
-                condition: "Good",
-                neighborhood: "West Beaumont",
-                fulfillment: "Local Pickup",
-                image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600&auto=format&fit=crop&q=80",
-                description: "Solid oak table with clean tapered legs. Minor scuff on lower shelf.",
-                seller: {
-                    username: "sarah_p",
-                    name: "Sarah Jenkins",
-                    neighborhood: "West Beaumont",
-                    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"
-                },
-                coords: [30.0810, -94.1250],
-                timestamp: Date.now() - 7200000
-            },
-            {
-                id: "item-3",
-                title: "Apple iPad Air 4th Gen 64GB - Space Gray",
-                price: 290.00,
-                category: "Electronics",
-                condition: "Like New",
-                neighborhood: "Groves",
-                fulfillment: "Shipping Available",
-                image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&auto=format&fit=crop&q=80",
-                description: "Always kept in protective case. Clean screen, works flawlessly.",
-                seller: {
-                    username: "alex_g",
-                    name: "Alex Garcia",
-                    neighborhood: "Groves",
-                    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
-                },
-                coords: [29.9495, -93.9180],
-                timestamp: Date.now() - 10800000
-            },
-            {
-                id: "item-4",
-                title: "Vintage Denim Trucker Jacket (Size M)",
-                price: 35.00,
-                category: "Apparel",
-                condition: "Good",
-                neighborhood: "Orange County",
-                fulfillment: "Shipping Available",
-                image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&auto=format&fit=crop&q=80",
-                description: "Authentic 90s vintage wash jacket in great condition.",
-                seller: {
-                    username: "chris_m",
-                    name: "Chris Miller",
-                    neighborhood: "Orange County",
-                    avatar: DEFAULT_AVATAR
-                },
-                coords: [30.0995, -93.7380],
-                timestamp: Date.now() - 14400000
-            }
-        ];
+        <!-- Dashboard Navigation -->
+        <div class="flex border-b border-slate-200 font-bold">
+          <button id="dashTabItemsBtn" onclick="switchDashTab('items')" class="flex-1 py-2 text-emerald-600 border-b-2 border-emerald-600 text-center">My Active Items</button>
+          <button id="dashTabInboxBtn" onclick="switchDashTab('inbox')" class="flex-1 py-2 text-slate-400 text-center">Inbox / Offers</button>
+        </div>
 
-        // Global State Variable Management
-        let items = [];
-        let currentUser = null;
-        let offers = [];
-        let favorites = [];
-        let currentView = 'grid';
-        let selectedCategory = 'All';
-        let showOnlyFavorites = false;
-        let leafletMap = null;
-        let mapMarkers = [];
-        let selectedItemForOffer = null;
+        <!-- Items Tab -->
+        <div id="dashItemsView" class="space-y-2 max-h-56 overflow-y-auto"></div>
 
-        // Initialize App on DOM Load
-        window.addEventListener('DOMContentLoaded', () => {
-            loadStateFromStorage();
-            renderHeaderUserBtn();
-            applyFilters();
-            updateFavoritesBadge();
+        <!-- Inbox Tab -->
+        <div id="dashInboxView" class="hidden space-y-2 max-h-56 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELL ITEM MODAL -->
+  <div id="sellModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="bg-emerald-600 text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 class="font-bold text-sm"><i class="fa-solid fa-tag mr-2"></i>Post Item for Sale</h3>
+        <button onclick="closeModal('sellModal')" class="text-white font-bold text-lg cursor-pointer">&times;</button>
+      </div>
+
+      <form onsubmit="handlePostItemSubmit(event)" class="p-5 text-xs space-y-3">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Item Title *</label>
+          <input type="text" id="postTitle" required placeholder="e.g. DeWalt Cordless Drill Kit" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Price ($) *</label>
+            <input type="number" id="postPrice" required placeholder="45" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Category</label>
+            <select id="postCategory" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              <option value="Tools">Tools</option>
+              <option value="Furniture">Furniture</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Apparel">Apparel</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Condition</label>
+            <select id="postCondition" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              <option value="New">New</option>
+              <option value="Like New">Like New</option>
+              <option value="Good" selected>Good</option>
+              <option value="Fair">Fair</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Neighborhood</label>
+            <select id="postLocation" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+              <option value="Nederland">Nederland</option>
+              <option value="Groves">Groves</option>
+              <option value="West Beaumont">West Beaumont</option>
+              <option value="Orange County">Orange County</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Fulfillment Option</label>
+          <select id="postFulfillment" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            <option value="Local Pickup">Local Pickup Only</option>
+            <option value="Shipping Available">Shipping Available</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Photo Link URL</label>
+          <input type="url" id="postPhoto" placeholder="Paste image URL or leave blank" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl shadow transition">Publish Listing</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ITEM DETAILS & OFFER MODAL -->
+  <div id="itemDetailModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="relative h-52 bg-slate-900">
+        <img id="detailImg" src="" class="w-full h-full object-cover">
+        <button onclick="closeModal('itemDetailModal')" class="absolute top-3 right-3 bg-slate-900/80 text-white w-7 h-7 rounded-full font-bold text-sm">&times;</button>
+      </div>
+
+      <div class="p-4 text-xs space-y-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 id="detailTitle" class="font-bold text-sm text-slate-900">Title</h3>
+            <p id="detailMeta" class="text-[10px] text-slate-500">Seller • Location</p>
+          </div>
+          <div id="detailPrice" class="text-xl font-black text-emerald-600">$0</div>
+        </div>
+
+        <form onsubmit="handleSendOfferSubmit(event)" class="border-t border-slate-200 pt-3 space-y-2">
+          <p class="font-bold text-slate-800"><i class="fa-solid fa-comments text-emerald-600 mr-1"></i>Send Cash Offer</p>
+          <div class="flex gap-2">
+            <input type="number" id="offerPrice" placeholder="Offer ($)" class="w-1/3 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold">
+            <input type="text" id="offerMsg" required placeholder="Is this available?" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl">Send Offer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var DEFAULT_LOGO_AVATAR = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23059669'/%3E%3Cpath d='M30 35 L50 20 L70 35 L70 75 L30 75 Z' fill='%23ffffff'/%3E%3Cpath d='M42 45 L58 45 L58 65 L42 65 Z' fill='%23059669'/%3E%3C/svg%3E";
+
+    var map = null;
+    var mapMarkers = [];
+    var currentUser = null;
+    var activeCategory = 'All';
+    var showOnlyFavorites = false;
+    var activeItem = null;
+
+    var areaCoords = {
+      'Nederland': [29.9749, -93.9924],
+      'Groves': [29.9488, -93.9168],
+      'West Beaumont': [30.0802, -94.1266],
+      'Orange County': [30.0933, -93.7360]
+    };
+
+    var defaultItems = [
+      {
+        id: 'item_1', sellerId: 'user_dave', sellerName: "Dave's Tools", sellerAvatar: DEFAULT_LOGO_AVATAR,
+        title: "DeWalt 20V Cordless Drill Kit", price: 45, category: "Tools", condition: "Like New",
+        location: "Nederland", fulfillment: "Local Pickup",
+        photo: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=600&q=80",
+        timestamp: Date.now() - 100000
+      },
+      {
+        id: 'item_2', sellerId: 'user_sarah', sellerName: "Sarah M.", sellerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+        title: "Solid Oak Coffee Table", price: 40, category: "Furniture", condition: "Good",
+        location: "Groves", fulfillment: "Local Pickup",
+        photo: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80",
+        timestamp: Date.now() - 200000
+      }
+    ];
+
+    function getStoredItems() {
+      var saved = localStorage.getItem('yardsale_items_v5');
+      return saved ? JSON.parse(saved) : defaultItems;
+    }
+    function saveStoredItems(items) { localStorage.setItem('yardsale_items_v5', JSON.stringify(items)); }
+
+    function getStoredFavs() { return JSON.parse(localStorage.getItem('yardsale_favs_v5') || '[]'); }
+    function saveStoredFavs(favs) { localStorage.setItem('yardsale_favs_v5', JSON.stringify(favs)); }
+
+    function getStoredMsgs() { return JSON.parse(localStorage.getItem('yardsale_msgs_v5') || '[]'); }
+    function saveStoredMsgs(msgs) { localStorage.setItem('yardsale_msgs_v5', JSON.stringify(msgs)); }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+
+    function switchMainView(view) {
+      var isGrid = view === 'grid';
+      document.getElementById('itemsGrid').classList.toggle('hidden', !isGrid);
+      document.getElementById('mapViewContainer').classList.toggle('hidden', isGrid);
+
+      document.getElementById('viewGridBtn').className = isGrid 
+        ? "px-2.5 py-1 rounded-md text-xs font-bold bg-white text-emerald-700 shadow"
+        : "px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-100 hover:text-white";
+
+      document.getElementById('viewMapBtn').className = !isGrid 
+        ? "px-2.5 py-1 rounded-md text-xs font-bold bg-white text-emerald-700 shadow"
+        : "px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-100 hover:text-white";
+
+      if (!isGrid) initLeafletMap();
+    }
+
+    function initLeafletMap() {
+      setTimeout(function() {
+        if (!map) {
+          map = L.map('leafletMap').setView([29.98, -93.95], 11);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+        }
+        map.invalidateSize();
+        renderMapMarkers();
+      }, 100);
+    }
+
+    function renderMapMarkers() {
+      if (!map) return;
+      mapMarkers.forEach(function(m) { map.removeLayer(m); });
+      mapMarkers = [];
+
+      var items = getFilteredItems();
+      items.forEach(function(item) {
+        var baseCoords = areaCoords[item.location] || [29.98, -93.95];
+        var lat = baseCoords[0] + (Math.random() - 0.5) * 0.02;
+        var lng = baseCoords[1] + (Math.random() - 0.5) * 0.02;
+
+        var avatarUrl = item.sellerAvatar || DEFAULT_LOGO_AVATAR;
+        var customIcon = L.divIcon({
+          className: 'custom-pin-wrapper',
+          html: `<div class="custom-avatar-pin"><img src="${avatarUrl}"></div>`,
+          iconSize: [38, 38], iconAnchor: [19, 19]
         });
 
-        function loadStateFromStorage() {
-            // Load Items
-            const savedItems = localStorage.getItem('ysh_items');
-            items = savedItems ? JSON.parse(savedItems) : SEED_ITEMS;
-            if (!savedItems) localStorage.setItem('ysh_items', JSON.stringify(SEED_ITEMS));
-
-            // Load User
-            const savedUser = localStorage.getItem('ysh_user');
-            currentUser = savedUser ? JSON.parse(savedUser) : null;
-
-            // Load Offers
-            const savedOffers = localStorage.getItem('ysh_offers');
-            offers = savedOffers ? JSON.parse(savedOffers) : [];
-
-            // Load Favorites
-            const savedFavs = localStorage.getItem('ysh_favorites');
-            favorites = savedFavs ? JSON.parse(savedFavs) : [];
-        }
-
-        function saveState() {
-            localStorage.setItem('ysh_items', JSON.stringify(items));
-            localStorage.setItem('ysh_user', JSON.stringify(currentUser));
-            localStorage.setItem('ysh_offers', JSON.stringify(offers));
-            localStorage.setItem('ysh_favorites', JSON.stringify(favorites));
-        }
-
-        function handleAuthButtonClick() {
-            if (currentUser) {
-                openDashboardModal();
-            } else {
-                openModal('auth-modal');
-            }
-        }
-
-        function switchAuthTab(tab) {
-            const signinBtn = document.getElementById('tab-signin-btn');
-            const regBtn = document.getElementById('tab-register-btn');
-            const signinForm = document.getElementById('signin-form');
-            const regForm = document.getElementById('register-form');
-
-            if (tab === 'signin') {
-                signinBtn.className = "flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600";
-                regBtn.className = "flex-1 py-3 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700";
-                signinForm.classList.remove('hidden');
-                regForm.classList.add('hidden');
-            } else {
-                regBtn.className = "flex-1 py-3 text-center font-bold text-blue-600 border-b-2 border-blue-600";
-                signinBtn.className = "flex-1 py-3 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700";
-                regForm.classList.remove('hidden');
-                signinForm.classList.add('hidden');
-            }
-        }
-
-        function handleSignIn(e) {
-            e.preventDefault();
-            const username = document.getElementById('signin-username').value.trim();
-            if (!username) return;
-
-            currentUser = {
-                username: username.toLowerCase(),
-                name: username.charAt(0).toUpperCase() + username.slice(1),
-                neighborhood: "Nederland",
-                avatar: DEFAULT_AVATAR
-            };
-
-            saveState();
-            renderHeaderUserBtn();
-            closeModal('auth-modal');
-            document.getElementById('signin-form').reset();
-        }
-
-        function handleRegister(e) {
-            e.preventDefault();
-            const name = document.getElementById('reg-name').value.trim();
-            const username = document.getElementById('reg-username').value.trim().toLowerCase();
-            const neighborhood = document.getElementById('reg-neighborhood').value;
-            const avatar = document.getElementById('reg-avatar').value.trim() || DEFAULT_AVATAR;
-
-            currentUser = { username, name, neighborhood, avatar };
-            saveState();
-            renderHeaderUserBtn();
-            closeModal('auth-modal');
-            document.getElementById('register-form').reset();
-        }
-
-        function handleSignOut() {
-            currentUser = null;
-            saveState();
-            renderHeaderUserBtn();
-            closeModal('dashboard-modal');
-        }
-
-        function renderHeaderUserBtn() {
-            const btn = document.getElementById('user-auth-btn');
-            if (currentUser) {
-                btn.innerHTML = `
-                    <img src="${currentUser.avatar}" class="w-6 h-6 rounded-full object-cover border border-blue-600">
-                    <span class="font-bold text-gray-900">${currentUser.name}</span>
-                `;
-            } else {
-                btn.innerHTML = `
-                    <i class="fa-regular fa-circle-user text-xl text-gray-600"></i>
-                    <span>Sign In</span>
-                `;
-            }
-        }
-
-        function switchView(mode) {
-            currentView = mode;
-            const gridView = document.getElementById('grid-view');
-            const mapView = document.getElementById('map-view');
-            const emptyState = document.getElementById('empty-state');
-
-            const gridBtn = document.getElementById('view-grid-btn');
-            const mapBtn = document.getElementById('view-map-btn');
-            const mobileGridBtn = document.getElementById('mobile-view-grid-btn');
-            const mobileMapBtn = document.getElementById('mobile-view-map-btn');
-
-            if (mode === 'grid') {
-                gridView.classList.remove('hidden');
-                mapView.classList.add('hidden');
-                
-                gridBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition bg-white text-blue-600 shadow-sm";
-                mapBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition text-gray-600 hover:text-gray-900";
-                
-                mobileGridBtn.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-white text-blue-600 shadow-sm";
-                mobileMapBtn.className = "px-3 py-1 rounded-lg text-xs font-semibold text-gray-600";
-            } else {
-                gridView.classList.add('hidden');
-                mapView.classList.remove('hidden');
-                emptyState.classList.add('hidden');
-
-                mapBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition bg-white text-blue-600 shadow-sm";
-                gridBtn.className = "px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition text-gray-600 hover:text-gray-900";
-                
-                mobileMapBtn.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-white text-blue-600 shadow-sm";
-                mobileGridBtn.className = "px-3 py-1 rounded-lg text-xs font-semibold text-gray-600";
-
-                initOrRefreshMap();
-            }
-        }
-
-        function initOrRefreshMap() {
-            setTimeout(() => {
-                if (!leafletMap) {
-                    leafletMap = L.map('map').setView([29.98, -93.95], 11);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap contributors'
-                    }).addTo(leafletMap);
-                }
-                
-                leafletMap.invalidateSize();
-                renderMapMarkers(getFilteredItems());
-            }, 100);
-        }
-
-        function renderMapMarkers(filteredItems) {
-            if (!leafletMap) return;
-
-            // Clear previous markers
-            mapMarkers.forEach(m => leafletMap.removeLayer(m));
-            mapMarkers = [];
-
-            filteredItems.forEach(item => {
-                if (!item.coords) return;
-
-                const customIcon = L.divIcon({
-                    className: 'custom-leaflet-icon',
-                    html: `<img src="${item.seller.avatar}" class="seller-marker">`,
-                    iconSize: [42, 42],
-                    iconAnchor: [21, 21],
-                    popupAnchor: [0, -20]
-                });
-
-                const popupContent = `
-                    <div class="p-2 w-48 text-center">
-                        <img src="${item.image}" class="w-full h-28 object-cover rounded-xl mb-2">
-                        <h4 class="font-bold text-xs text-gray-800 line-clamp-1">${item.title}</h4>
-                        <p class="font-extrabold text-blue-600 text-sm my-1">$${item.price.toFixed(2)}</p>
-                        <button onclick="openItemModal('${item.id}')" class="w-full bg-blue-600 text-white text-xs font-bold py-1.5 rounded-lg hover:bg-blue-700 transition">View Details</button>
-                    </div>
-                `;
-
-                const marker = L.marker(item.coords, { icon: customIcon })
-                    .addTo(leafletMap)
-                    .bindPopup(popupContent);
-
-                mapMarkers.push(marker);
-            });
-        }
-
-        function setCategoryFilter(category, btnElement) {
-            selectedCategory = category;
-            document.querySelectorAll('.cat-btn').forEach(btn => {
-                btn.className = "cat-btn px-4 py-1.5 rounded-full font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0";
-            });
-            btnElement.className = "cat-btn px-4 py-1.5 rounded-full font-medium bg-blue-600 text-white transition shrink-0";
-            applyFilters();
-        }
-
-        function toggleSavedFilter() {
-            showOnlyFavorites = !showOnlyFavorites;
-            const btn = document.getElementById('fav-filter-btn');
-            const icon = document.getElementById('fav-filter-icon');
-
-            if (showOnlyFavorites) {
-                btn.classList.add('bg-red-50', 'border-red-200');
-                icon.className = "fa-solid fa-heart text-red-500 text-lg";
-            } else {
-                btn.classList.remove('bg-red-50', 'border-red-200');
-                icon.className = "fa-regular fa-heart text-red-500 text-lg";
-            }
-            applyFilters();
-        }
-
-        function resetFilters() {
-            selectedCategory = 'All';
-            showOnlyFavorites = false;
-            document.getElementById('search-input').value = '';
-            document.getElementById('neighborhood-filter').value = 'All';
-            document.getElementById('fulfillment-filter').value = 'All';
-
-            const favBtn = document.getElementById('fav-filter-btn');
-            favBtn.classList.remove('bg-red-50', 'border-red-200');
-            document.getElementById('fav-filter-icon').className = "fa-regular fa-heart text-red-500 text-lg";
-
-            document.querySelectorAll('.cat-btn').forEach((btn, index) => {
-                if (index === 0) btn.className = "cat-btn px-4 py-1.5 rounded-full font-medium bg-blue-600 text-white transition shrink-0";
-                else btn.className = "cat-btn px-4 py-1.5 rounded-full font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition shrink-0";
-            });
-
-            applyFilters();
-        }
-
-        function getFilteredItems() {
-            const searchVal = document.getElementById('search-input').value.toLowerCase();
-            const hoodVal = document.getElementById('neighborhood-filter').value;
-            const fulfillVal = document.getElementById('fulfillment-filter').value;
-
-            return items.filter(item => {
-                const matchesSearch = item.title.toLowerCase().includes(searchVal) || item.description.toLowerCase().includes(searchVal);
-                const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-                const matchesHood = hoodVal === 'All' || item.neighborhood === hoodVal;
-                const matchesFulfill = fulfillVal === 'All' || item.fulfillment === fulfillVal;
-                const matchesFav = !showOnlyFavorites || favorites.includes(item.id);
-
-                return matchesSearch && matchesCategory && matchesHood && matchesFulfill && matchesFav;
-            });
-        }
-
-        function applyFilters() {
-            const filtered = getFilteredItems();
-            renderGrid(filtered);
-            if (currentView === 'map') renderMapMarkers(filtered);
-        }
-
-        function renderGrid(filteredItems) {
-            const gridContainer = document.getElementById('grid-view');
-            const emptyState = document.getElementById('empty-state');
-
-            if (filteredItems.length === 0) {
-                gridContainer.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            gridContainer.innerHTML = filteredItems.map(item => {
-                const isFav = favorites.includes(item.id);
-                return `
-                    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs hover:shadow-lg transition flex flex-col overflow-hidden group cursor-pointer" onclick="openItemModal('${item.id}')">
-                        <div class="relative aspect-4/3 overflow-hidden bg-gray-100">
-                            <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            
-                            <!-- Favorite Toggle -->
-                            <button onclick="event.stopPropagation(); toggleFavorite('${item.id}')" class="absolute top-3 right-3 bg-white/80 backdrop-blur-xs p-2 rounded-full shadow-md hover:bg-white transition">
-                                <i class="${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'} fa-heart text-base"></i>
-                            </button>
-
-                            <!-- Fulfillment Badge -->
-                            <span class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-xs text-white text-xs font-medium px-2.5 py-1 rounded-lg">
-                                ${item.fulfillment}
-                            </span>
-                        </div>
-
-                        <div class="p-4 flex-1 flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center justify-between gap-2 mb-1">
-                                    <h3 class="font-bold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition">${item.title}</h3>
-                                    <span class="font-extrabold text-blue-600 text-lg">$${item.price.toFixed(2)}</span>
-                                </div>
-                                <p class="text-xs text-gray-500 line-clamp-2 mb-3">${item.description}</p>
-                            </div>
-
-                            <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                                <div class="flex items-center gap-1.5">
-                                    <img src="${item.seller.avatar}" class="w-5 h-5 rounded-full object-cover">
-                                    <span class="font-semibold text-gray-700">${item.seller.name}</span>
-                                </div>
-                                <span><i class="fa-solid fa-location-dot"></i> ${item.neighborhood}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function toggleFavorite(itemId) {
-            const idx = favorites.indexOf(itemId);
-            if (idx > -1) {
-                favorites.splice(idx, 1);
-            } else {
-                favorites.push(itemId);
-            }
-            saveState();
-            updateFavoritesBadge();
-            applyFilters();
-        }
-
-        function updateFavoritesBadge() {
-            const badge = document.getElementById('fav-count-badge');
-            if (favorites.length > 0) {
-                badge.textContent = favorites.length;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-
-        function handleSellClick() {
-            if (!currentUser) {
-                openModal('auth-modal');
-            } else {
-                openModal('sell-modal');
-            }
-        }
-
-        function handleCreateItem(e) {
-            e.preventDefault();
-            if (!currentUser) return;
-
-            const hood = currentUser.neighborhood || "Nederland";
-            const baseCoords = HOOD_COORDS[hood] || [29.9749, -93.9924];
-            
-            // Jitter coordinates slightly for multiple listings in same neighborhood
-            const jitterCoords = [
-                baseCoords[0] + (Math.random() - 0.5) * 0.02,
-                baseCoords[1] + (Math.random() - 0.5) * 0.02
-            ];
-
-            const newItem = {
-                id: 'item-' + Date.now(),
-                title: document.getElementById('sell-title').value.trim(),
-                price: parseFloat(document.getElementById('sell-price').value),
-                category: document.getElementById('sell-category').value,
-                condition: document.getElementById('sell-condition').value,
-                neighborhood: hood,
-                fulfillment: document.getElementById('sell-fulfillment').value,
-                image: document.getElementById('sell-image').value.trim(),
-                description: document.getElementById('sell-description').value.trim(),
-                seller: { ...currentUser },
-                coords: jitterCoords,
-                timestamp: Date.now()
-            };
-
-            items.unshift(newItem); // Place at top of feed
-            saveState();
-            closeModal('sell-modal');
-            document.querySelector('#sell-modal form').reset();
-            applyFilters();
-        }
-
-        function openItemModal(itemId) {
-            const item = items.find(i => i.id === itemId);
-            if (!item) return;
-
-            selectedItemForOffer = item;
-
-            document.getElementById('detail-img').src = item.image;
-            document.getElementById('detail-fulfillment').textContent = item.fulfillment;
-            document.getElementById('detail-category').textContent = item.category;
-            document.getElementById('detail-title').textContent = item.title;
-            document.getElementById('detail-price').textContent = `$${item.price.toFixed(2)}`;
-            document.getElementById('detail-condition').textContent = item.condition;
-            document.getElementById('detail-location').querySelector('span').textContent = item.neighborhood;
-            document.getElementById('detail-desc').textContent = item.description;
-            
-            document.getElementById('detail-seller-avatar').src = item.seller.avatar;
-            document.getElementById('detail-seller-name').textContent = item.seller.name;
-            document.getElementById('detail-seller-hood').textContent = item.seller.neighborhood;
-
-            document.getElementById('offer-amount').value = item.price;
-            openModal('item-modal');
-        }
-
-        function handleSendOffer(e) {
-            e.preventDefault();
-            if (!currentUser) {
-                closeModal('item-modal');
-                openModal('auth-modal');
-                return;
-            }
-
-            if (!selectedItemForOffer) return;
-
-            const amount = parseFloat(document.getElementById('offer-amount').value);
-            const message = document.getElementById('offer-msg').value.trim();
-
-            const newOffer = {
-                id: 'offer-' + Date.now(),
-                itemId: selectedItemForOffer.id,
-                itemTitle: selectedItemForOffer.title,
-                sellerUsername: selectedItemForOffer.seller.username,
-                buyerName: currentUser.name,
-                buyerAvatar: currentUser.avatar,
-                amount: amount,
-                message: message,
-                timestamp: Date.now()
-            };
-
-            offers.unshift(newOffer);
-            saveState();
-
-            closeModal('item-modal');
-            document.getElementById('offer-form').reset();
-            showCustomToast('Offer successfully sent to seller!');
-        }
-
-        function openDashboardModal() {
-            if (!currentUser) return;
-
-            document.getElementById('dash-user-avatar').src = currentUser.avatar;
-            document.getElementById('dash-user-name').textContent = currentUser.name;
-            document.getElementById('dash-user-neighborhood').querySelector('span').textContent = currentUser.neighborhood;
-
-            renderDashItems();
-            renderDashInbox();
-            openModal('dashboard-modal');
-        }
-
-        function switchDashTab(tab) {
-            const itemsTab = document.getElementById('dash-items-tab');
-            const inboxTab = document.getElementById('dash-inbox-tab');
-            const itemsView = document.getElementById('dash-items-view');
-            const inboxView = document.getElementById('dash-inbox-view');
-
-            if (tab === 'items') {
-                itemsTab.className = "py-2.5 px-4 font-bold text-blue-600 border-b-2 border-blue-600 text-sm";
-                inboxTab.className = "py-2.5 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 text-sm flex items-center gap-2";
-                itemsView.classList.remove('hidden');
-                inboxView.classList.add('hidden');
-            } else {
-                inboxTab.className = "py-2.5 px-4 font-bold text-blue-600 border-b-2 border-blue-600 text-sm flex items-center gap-2";
-                itemsTab.className = "py-2.5 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 text-sm";
-                inboxView.classList.remove('hidden');
-                itemsView.classList.add('hidden');
-            }
-        }
-
-        function renderDashItems() {
-            const container = document.getElementById('dash-items-view');
-            const myItems = items.filter(i => i.seller.username === currentUser.username);
-
-            if (myItems.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-gray-400 text-sm">You haven't listed any items yet.</p>`;
-                return;
-            }
-
-            container.innerHTML = myItems.map(item => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-200 gap-3">
-                    <img src="${item.image}" class="w-14 h-14 rounded-xl object-cover">
-                    <div class="flex-1">
-                        <h4 class="font-bold text-sm text-gray-900 line-clamp-1">${item.title}</h4>
-                        <p class="font-extrabold text-blue-600 text-sm">$${item.price.toFixed(2)}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="bumpItem('${item.id}')" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold text-xs rounded-xl transition flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-up text-xs"></i> Bump Feed
-                        </button>
-                        <button onclick="deleteItem('${item.id}')" class="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition text-xs">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
+        var marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+        marker.bindPopup(`
+          <div style="width: 150px; text-align:center;">
+            <img src="${item.photo}" style="width:100%; height:80px; object-fit:cover; border-radius:6px;">
+            <div style="font-weight:bold; font-size:11px; margin-top:4px;">${item.title}</div>
+            <div style="color:#059669; font-weight:bold;">$${item.price}</div>
+          </div>
+        `);
+        mapMarkers.push(marker);
+      });
+    }
+
+    function toggleFavorite(e, id) {
+      e.stopPropagation();
+      var favs = getStoredFavs();
+      var idx = favs.indexOf(id);
+      if (idx > -1) favs.splice(idx, 1);
+      else favs.push(id);
+      saveStoredFavs(favs);
+      renderGrid();
+    }
+
+    function toggleFavoritesFilter() {
+      showOnlyFavorites = !showOnlyFavorites;
+      document.getElementById('favoritesNavBtn').classList.toggle('bg-rose-600', showOnlyFavorites);
+      renderGrid();
+    }
+
+    function filterCategory(cat) { activeCategory = cat; renderGrid(); }
+    function resetFilters() {
+      showOnlyFavorites = false; activeCategory = 'All';
+      document.getElementById('searchInput').value = '';
+      renderGrid();
+    }
+
+    function getFilteredItems() {
+      var items = getStoredItems();
+      var search = (document.getElementById('searchInput').value || document.getElementById('searchInputMobile').value || "").toLowerCase();
+      var fulfillment = document.getElementById('fulfillmentFilter').value;
+      var favs = getStoredFavs();
+
+      items.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+
+      if (showOnlyFavorites) items = items.filter(function(i) { return favs.includes(i.id); });
+      if (activeCategory !== 'All') items = items.filter(function(i) { return i.category === activeCategory; });
+      if (fulfillment !== 'All') items = items.filter(function(i) { return i.fulfillment === fulfillment; });
+      if (search) items = items.filter(function(i) { return i.title.toLowerCase().includes(search); });
+
+      return items;
+    }
+
+    function renderGrid() {
+      var grid = document.getElementById('itemsGrid');
+      var items = getFilteredItems();
+      var favs = getStoredFavs();
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">No items found.</div>';
+        return;
+      }
+
+      grid.innerHTML = items.map(function(item) {
+        var isFav = favs.includes(item.id);
+        var avatarUrl = item.sellerAvatar || DEFAULT_LOGO_AVATAR;
+
+        return `
+          <div onclick="openItemDetails('${item.id}')" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition cursor-pointer flex flex-col justify-between">
+            <div>
+              <div class="relative h-36 bg-slate-100">
+                <img src="${item.photo}" class="w-full h-full object-cover">
+                <button onclick="toggleFavorite(event, '${item.id}')" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-slate-900/60 flex items-center justify-center text-white">
+                  <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-300'} text-xs"></i>
+                </button>
+                <span class="absolute top-2 left-2 bg-slate-900/80 text-white font-bold text-[9px] px-1.5 py-0.5 rounded">${item.condition}</span>
+              </div>
+              <div class="p-3">
+                <div class="flex items-center space-x-1 text-[10px] text-slate-500 mb-1">
+                  <img src="${avatarUrl}" class="w-3.5 h-3.5 rounded-full object-cover">
+                  <span class="font-bold text-emerald-800">${item.sellerName}</span>
                 </div>
-            `).join('');
-        }
+                <h3 class="font-bold text-slate-900 text-xs line-clamp-1">${item.title}</h3>
+                <div class="text-sm font-extrabold text-slate-900 mt-1">$${item.price}</div>
+              </div>
+            </div>
+            <div class="px-3 pb-3">
+              <span class="block w-full text-center bg-slate-100 text-slate-700 font-bold py-1 rounded text-[10px]">View & Offer</span>
+            </div>
+          </div>
+        `;
+      }).join('');
 
-        function renderDashInbox() {
-            const container = document.getElementById('dash-inbox-view');
-            const myOffers = offers.filter(o => o.sellerUsername === currentUser.username);
-            const badge = document.getElementById('dash-inbox-badge');
+      renderMapMarkers();
+    }
 
-            if (myOffers.length > 0) {
-                badge.textContent = myOffers.length;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+    function openItemDetails(id) {
+      var item = getStoredItems().find(function(i) { return i.id === id; });
+      if (!item) return;
+      activeItem = item;
+      document.getElementById('detailTitle').innerText = item.title;
+      document.getElementById('detailPrice').innerText = '$' + item.price;
+      document.getElementById('detailMeta').innerText = item.sellerName + ' • ' + item.location;
+      document.getElementById('detailImg').src = item.photo;
+      openModal('itemDetailModal');
+    }
 
-            if (myOffers.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-gray-400 text-sm">No cash offers received yet.</p>`;
-                return;
-            }
+    function handleSendOfferSubmit(e) {
+      e.preventDefault();
+      if (!activeItem) return;
+      var msgs = getStoredMsgs();
+      msgs.unshift({
+        id: 'msg_' + Date.now(),
+        sellerId: activeItem.sellerId,
+        buyerName: currentUser ? currentUser.name : 'Buyer Neighbor',
+        itemTitle: activeItem.title,
+        offerPrice: document.getElementById('offerPrice').value,
+        text: document.getElementById('offerMsg').value
+      });
+      saveStoredMsgs(msgs);
+      closeModal('itemDetailModal');
+      alert('Offer sent to seller!');
+    }
 
-            container.innerHTML = myOffers.map(offer => `
-                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <img src="${offer.buyerAvatar}" class="w-7 h-7 rounded-full object-cover">
-                            <span class="font-bold text-sm text-gray-800">${offer.buyerName}</span>
-                        </div>
-                        <span class="font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 text-sm">
-                            Offered $${offer.amount.toFixed(2)}
-                        </span>
-                    </div>
-                    <p class="text-xs font-semibold text-gray-500">For: <span class="text-gray-800">${offer.itemTitle}</span></p>
-                    <p class="text-sm bg-white p-2.5 rounded-xl border border-gray-100 text-gray-700 italic">"${offer.message}"</p>
-                </div>
-            `).join('');
-        }
+    function handleAccountNavClick() {
+      if (currentUser) {
+        renderDashboard();
+        openModal('dashboardModal');
+      } else {
+        openModal('authModal');
+      }
+    }
 
-        function bumpItem(itemId) {
-            const index = items.findIndex(i => i.id === itemId);
-            if (index > -1) {
-                const [item] = items.splice(index, 1);
-                item.timestamp = Date.now();
-                items.unshift(item); // Move to top
-                saveState();
-                renderDashItems();
-                applyFilters();
-                showCustomToast('Item bumped to top of feed!');
-            }
-        }
+    function handleSellButtonClick() {
+      if (!currentUser) {
+        alert("Please sign in or create an account first!");
+        openModal('authModal');
+      } else {
+        openModal('sellModal');
+      }
+    }
 
-        function deleteItem(itemId) {
-            items = items.filter(i => i.id !== itemId);
-            saveState();
-            renderDashItems();
-            applyFilters();
-            showCustomToast('Listing deleted');
-        }
+    function switchAuthTab(tab) {
+      var isSignIn = tab === 'signin';
+      document.getElementById('signInForm').classList.toggle('hidden', !isSignIn);
+      document.getElementById('registerForm').classList.toggle('hidden', isSignIn);
+      document.getElementById('tabSignInBtn').className = isSignIn ? "flex-1 py-1.5 font-bold text-emerald-600 border-b-2 border-emerald-600 text-center" : "flex-1 py-1.5 font-semibold text-slate-400 text-center";
+      document.getElementById('tabRegisterBtn').className = !isSignIn ? "flex-1 py-1.5 font-bold text-emerald-600 border-b-2 border-emerald-600 text-center" : "flex-1 py-1.5 font-semibold text-slate-400 text-center";
+    }
 
-        function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
-        }
+    function handleSignInSubmit(e) {
+      e.preventDefault();
+      currentUser = {
+        id: 'user_dave',
+        name: document.getElementById('signInUser').value || "Dave's Yard Sale",
+        location: 'Nederland',
+        avatar: DEFAULT_LOGO_AVATAR
+      };
+      updateHeaderUser();
+      closeModal('authModal');
+    }
 
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
+    function handleRegisterSubmit(e) {
+      e.preventDefault();
+      var customAv = document.getElementById('regAvatar').value;
+      currentUser = {
+        id: 'user_' + Date.now(),
+        name: document.getElementById('regName').value,
+        location: document.getElementById('regLocation').value,
+        avatar: customAv.trim() !== '' ? customAv : DEFAULT_LOGO_AVATAR
+      };
+      updateHeaderUser();
+      closeModal('authModal');
+    }
 
-        function showCustomToast(msg) {
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-5 right-5 bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold z-50 animate-bounce flex items-center gap-2';
-            toast.innerHTML = `<i class="fa-solid fa-circle-check text-green-400"></i> ${msg}`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-    </script>
+    function handleSignOut() {
+      currentUser = null;
+      updateHeaderUser();
+      closeModal('dashboardModal');
+    }
+
+    function updateHeaderUser() {
+      var nameText = document.getElementById('accountNavText');
+      var navImg = document.getElementById('navAvatarImg');
+      var navIcon = document.getElementById('navDefaultIcon');
+
+      if (currentUser) {
+        nameText.innerText = currentUser.name;
+        navImg.src = currentUser.avatar || DEFAULT_LOGO_AVATAR;
+        navImg.classList.remove('hidden');
+        navIcon.classList.add('hidden');
+      } else {
+        nameText.innerText = "Sign In";
+        navImg.classList.add('hidden');
+        navIcon.classList.remove('hidden');
+      }
+    }
+
+    function switchDashTab(tab) {
+      var isItems = tab === 'items';
+      document.getElementById('dashItemsView').classList.toggle('hidden', !isItems);
+      document.getElementById('dashInboxView').classList.toggle('hidden', isItems);
+      document.getElementById('dashTabItemsBtn').className = isItems ? "flex-1 py-2 text-emerald-600 border-b-2 border-emerald-600 text-center" : "flex-1 py-2 text-slate-400 text-center";
+      document.getElementById('dashTabInboxBtn').className = !isItems ? "flex-1 py-2 text-emerald-600 border-b-2 border-emerald-600 text-center" : "flex-1 py-2 text-slate-400 text-center";
+    }
+
+    function renderDashboard() {
+      if (!currentUser) return;
+      document.getElementById('dashName').innerText = currentUser.name;
+      document.getElementById('dashMeta').innerText = currentUser.location + " • Verified Seller";
+      document.getElementById('dashAvatarImg').src = currentUser.avatar || DEFAULT_LOGO_AVATAR;
+
+      var items = getStoredItems().filter(function(i) { return i.sellerId === currentUser.id; });
+      var itemsView = document.getElementById('dashItemsView');
+
+      if (items.length === 0) {
+        itemsView.innerHTML = '<p class="text-slate-400 py-3 text-center">No active listings.</p>';
+      } else {
+        itemsView.innerHTML = items.map(function(item) {
+          return `
+            <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+              <div class="flex items-center space-x-2">
+                <img src="${item.photo}" class="w-8 h-8 rounded object-cover">
+                <div><p class="font-bold">${item.title}</p><p class="text-[10px] text-slate-500">$${item.price}</p></div>
+              </div>
+              <button onclick="bumpListing('${item.id}')" class="bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded text-[10px]">Bump Feed</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      var msgs = getStoredMsgs();
+      var inboxView = document.getElementById('dashInboxView');
+      if (msgs.length === 0) {
+        inboxView.innerHTML = '<p class="text-slate-400 py-3 text-center">No offers received.</p>';
+      } else {
+        inboxView.innerHTML = msgs.map(function(m) {
+          return `
+            <div class="p-2 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+              <div class="flex justify-between font-bold"><span>${m.buyerName}</span><span class="text-amber-700">Offer: $${m.offerPrice}</span></div>
+              <p class="text-[10px] text-slate-500">Item: ${m.itemTitle}</p>
+              <p class="italic bg-white p-1 rounded border">"${m.text}"</p>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function bumpListing(id) {
+      var items = getStoredItems();
+      var item = items.find(function(i) { return i.id === id; });
+      if (item) {
+        item.timestamp = Date.now();
+        saveStoredItems(items);
+        renderDashboard();
+        renderGrid();
+        alert('Listing bumped!');
+      }
+    }
+
+    function handlePostItemSubmit(e) {
+      e.preventDefault();
+      var items = getStoredItems();
+      items.unshift({
+        id: 'item_' + Date.now(),
+        sellerId: currentUser ? currentUser.id : 'anon',
+        sellerName: currentUser ? currentUser.name : 'Local Seller',
+        sellerAvatar: currentUser ? currentUser.avatar : DEFAULT_LOGO_AVATAR,
+        title: document.getElementById('postTitle').value,
+        price: Number(document.getElementById('postPrice').value),
+        category: document.getElementById('postCategory').value,
+        condition: document.getElementById('postCondition').value,
+        location: document.getElementById('postLocation').value,
+        fulfillment: document.getElementById('postFulfillment').value,
+        photo: document.getElementById('postPhoto').value || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80',
+        timestamp: Date.now()
+      });
+      saveStoredItems(items);
+      closeModal('sellModal');
+      renderGrid();
+      alert('Listing published!');
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      updateHeaderUser();
+      renderGrid();
+    });
+  </script>
 </body>
 </html>
-```
