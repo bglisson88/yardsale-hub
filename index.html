@@ -3,330 +3,174 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YardSale Hub - Neighborhood Marketplace & Seller Platform</title>
+  <title>YardSale Hub - Neighborhood Marketplace</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 md:pb-0">
 
+  <!-- Header / Navigation -->
   <header class="bg-emerald-600 text-white shadow-md sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-      
-      <!-- Brand Logo -->
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('marketplace')">
-        <div class="bg-white text-emerald-600 p-2.5 rounded-xl font-bold text-xl shadow-sm flex items-center justify-center">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="filterBySeller(null)">
+        <div class="bg-white text-emerald-600 p-2 rounded-xl font-bold text-xl shadow-sm">
           <i class="fa-solid fa-store"></i>
         </div>
         <div>
-          <h1 class="text-xl font-extrabold tracking-tight leading-none flex items-center gap-1.5">
-            YardSale Hub
-            <span class="bg-amber-400 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">PRO</span>
-          </h1>
-          <p class="text-xs text-emerald-100 font-medium">Verified Neighborhood Sellers</p>
+          <h1 class="text-xl font-bold tracking-tight leading-none">YardSale Hub</h1>
+          <p class="text-xs text-emerald-100 font-medium">Mid-County & Orange County Pilot</p>
         </div>
       </div>
-
-      <!-- Navigation & Auth Actions -->
       <div class="flex items-center space-x-2 sm:space-x-3">
         
-        <!-- Marketplace Nav link -->
-        <button onclick="navigateTo('marketplace')" type="button" class="text-emerald-100 hover:text-white px-2.5 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center space-x-1.5">
-          <i class="fa-solid fa-border-all"></i>
-          <span class="hidden sm:inline">Browse</span>
+        <!-- ACCOUNT / DASHBOARD BUTTON -->
+        <button id="accountNavBtn" onclick="openAccountModal()" type="button" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition flex items-center space-x-1.5 cursor-pointer">
+          <i class="fa-solid fa-user-circle text-base"></i>
+          <span id="accountNavText" class="hidden sm:inline">Sign In / Dashboard</span>
         </button>
 
-        <!-- Dynamic User Auth Section -->
-        <div id="navAuthArea" class="flex items-center space-x-2">
-          <!-- Populated by JavaScript based on logged-in user state -->
-        </div>
-
-        <!-- Bundle Drawer Trigger -->
-        <button onclick="toggleCartDrawer(true)" type="button" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-xl text-xs md:text-sm font-semibold transition flex items-center space-x-2 border border-emerald-500/30">
-          <i class="fa-solid fa-basket-shopping text-amber-300"></i>
-          <span class="hidden md:inline">Bundle</span>
-          <span id="cartBadge" class="bg-amber-400 text-slate-900 font-bold rounded-full text-xs w-5 h-5 flex items-center justify-center shadow-sm">0</span>
+        <!-- TOP LIST ITEM BUTTON -->
+        <button onclick="handleListButtonClick()" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow cursor-pointer active:scale-95">
+          <i class="fa-solid fa-plus"></i>
+          <span>List Item</span>
         </button>
 
+        <!-- BUNDLE BUTTON -->
+        <button onclick="viewBundle()" type="button" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
+          <i class="fa-solid fa-basket-shopping"></i>
+          <span class="hidden sm:inline">Bundle</span>
+          <span id="cartBadge" class="bg-amber-400 text-slate-900 font-bold rounded-full text-xs w-5 h-5 flex items-center justify-center">0</span>
+        </button>
       </div>
     </div>
   </header>
 
-  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
-
-  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
-    
-    <!-- VIEW 1: MARKETPLACE GRID -->
-    <div id="viewMarketplace" class="space-y-6">
-      
-      <!-- Hero Banner & Search Filter -->
-      <div class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div class="relative z-10 max-w-2xl">
-          <span class="bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider mb-3 inline-block">Local Direct Selling</span>
-          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">Shop verified neighborhood sales & local sellers</h2>
-          <p class="text-emerald-100 text-sm mb-4">Connect directly with trusted sellers in your community. Rate experiences, leave comments, and make bundle offers!</p>
-          
-          <div class="flex flex-col sm:flex-row gap-2">
-            <div class="relative flex-1">
-              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
-              <input type="text" id="searchInput" oninput="filterItems()" placeholder="Search items, categories, or seller names..." class="w-full pl-10 pr-4 py-2.5 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-inner">
-            </div>
-            <select id="locationFilter" onchange="filterItems()" class="px-3 py-2.5 rounded-xl text-slate-900 text-sm font-semibold focus:outline-none bg-white border-0 shadow">
-              <option value="ALL">All Neighborhoods</option>
-              <option value="Nederland">Nederland</option>
-              <option value="Groves">Groves</option>
-              <option value="West Beaumont">West Beaumont</option>
-              <option value="Orange County">Orange County</option>
-            </select>
-          </div>
+  <!-- Hero & Filter Bar -->
+  <section class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 id="viewTitle" class="text-2xl font-bold text-slate-900">Virtual Yard Sales Near You</h2>
+          <p id="viewSubtitle" class="text-slate-600 text-sm mt-1">Browse neighborhood sales in Nederland, Groves, and West Beaumont.</p>
         </div>
-        <i class="fa-solid fa-shop absolute -right-6 -bottom-8 text-emerald-600/30 text-[180px] pointer-events-none"></i>
-      </div>
-
-      <!-- Category Tabs -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 text-sm scrollbar-none" id="categoryBar">
-        <button onclick="setCategory('ALL')" class="cat-btn active bg-slate-900 text-white font-semibold px-4 py-2 rounded-xl whitespace-nowrap transition">All Listings</button>
-        <button onclick="setCategory('Furniture')" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2 rounded-xl border border-slate-200 whitespace-nowrap transition">Furniture</button>
-        <button onclick="setCategory('Electronics')" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2 rounded-xl border border-slate-200 whitespace-nowrap transition">Electronics</button>
-        <button onclick="setCategory('Tools')" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2 rounded-xl border border-slate-200 whitespace-nowrap transition">Tools & Lawn</button>
-        <button onclick="setCategory('Collectibles')" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 font-semibold px-4 py-2 rounded-xl border border-slate-200 whitespace-nowrap transition">Collectibles & Toys</button>
-      </div>
-
-      <!-- Items Grid -->
-      <div id="itemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Rendered Dynamically via JS -->
-      </div>
-    </div>
-
-    <!-- VIEW 2: SELLER DASHBOARD -->
-    <div id="viewDashboard" class="hidden space-y-6">
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="flex items-center space-x-4">
-          <img id="dashAvatar" src="" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-sm">
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 id="dashSellerName" class="text-2xl font-bold text-slate-900">Seller Dashboard</h2>
-              <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">Verified Seller</span>
-            </div>
-            <p id="dashHandle" class="text-slate-500 text-sm">@handle • Member since 2024</p>
-            <div class="flex items-center space-x-2 mt-1 text-xs text-slate-600">
-              <span id="dashRating" class="text-amber-500 font-bold flex items-center gap-1"><i class="fa-solid fa-star"></i> 5.0</span>
-              <span>•</span>
-              <span id="dashTotalSales">0 Listings Published</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2 w-full md:w-auto">
-          <button onclick="openPublicProfile(currentUser.id)" class="flex-1 md:flex-none bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-4 py-2.5 rounded-xl text-sm transition flex items-center justify-center space-x-2">
-            <i class="fa-solid fa-eye"></i>
-            <span>View Public Storefront</span>
+        <div class="flex flex-wrap gap-2 items-center">
+          <button id="resetFilterBtn" onclick="filterBySeller(null)" type="button" class="hidden bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-800">
+            <i class="fa-solid fa-xmark mr-1"></i> Clear Seller Filter
           </button>
-          <button onclick="togglePostModal(true)" class="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition flex items-center justify-center space-x-2 shadow">
-            <i class="fa-solid fa-plus"></i>
-            <span>List New Item</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Dashboard Tabs -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="flex justify-between items-center text-slate-500 text-sm mb-1">
-            <span>Active Listings</span>
-            <i class="fa-solid fa-box text-emerald-600"></i>
-          </div>
-          <h3 id="dashActiveCount" class="text-2xl font-extrabold text-slate-900">0</h3>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="flex justify-between items-center text-slate-500 text-sm mb-1">
-            <span>Seller Reputation</span>
-            <i class="fa-solid fa-star text-amber-400"></i>
-          </div>
-          <h3 id="dashRatingBig" class="text-2xl font-extrabold text-slate-900">5.0 / 5.0</h3>
-        </div>
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="flex justify-between items-center text-slate-500 text-sm mb-1">
-            <span>Total Reviews</span>
-            <i class="fa-solid fa-comments text-blue-500"></i>
-          </div>
-          <h3 id="dashReviewCount" class="text-2xl font-extrabold text-slate-900">0</h3>
-        </div>
-      </div>
-
-      <!-- Seller's Items Section -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="font-bold text-lg text-slate-900">Your Managed Inventory</h3>
-          <button onclick="togglePostModal(true)" class="text-sm font-semibold text-emerald-600 hover:text-emerald-700">+ Add Listing</button>
-        </div>
-        <div id="dashboardItemsContainer" class="divide-y divide-slate-100">
-          <!-- Dynamically populated via JS -->
+          <button type="button" class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm">All Items</button>
+          <button type="button" class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Furniture</button>
+          <button type="button" class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Electronics</button>
+          <button type="button" class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Tools & Lawn</button>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- VIEW 3: PUBLIC SELLER STOREFRONT / PROFILE -->
-    <div id="viewPublicProfile" class="hidden space-y-6">
-      <button onclick="navigateTo('marketplace')" class="text-sm font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-2">
-        <i class="fa-solid fa-arrow-left"></i> Back to Marketplace
-      </button>
-
-      <!-- Store Header Card -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div class="flex items-center space-x-5">
-            <img id="storeAvatar" src="" class="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow">
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 id="storeName" class="text-2xl font-bold text-slate-900">Store Name</h2>
-                <span id="storeVerifiedBadge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">Verified Seller</span>
-              </div>
-              <p id="storeHandle" class="text-slate-500 text-sm">@handle</p>
-              <p id="storeBio" class="text-slate-600 text-sm mt-2 max-w-xl">Seller bio goes here...</p>
-
-              <div class="flex items-center gap-4 mt-3 text-sm">
-                <div class="flex items-center text-amber-500 font-bold">
-                  <span id="storeStarRating">★ 5.0</span>
-                  <span id="storeReviewCount" class="text-slate-400 font-normal text-xs ml-1">(0 reviews)</span>
-                </div>
-                <span class="text-slate-300">•</span>
-                <span id="storeLocation" class="text-slate-600 font-medium text-xs"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>Nederland</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <button onclick="toggleReviewModal(true)" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center space-x-2">
-              <i class="fa-solid fa-star"></i>
-              <span>Rate / Review Seller</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Two Column Layout: Items & Reviews -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Left 2 Cols: Seller's Items -->
-        <div class="lg:col-span-2 space-y-4">
-          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i class="fa-solid fa-boxes-packing text-emerald-600"></i>
-            <span>Active Items from this Seller</span>
-          </h3>
-          <div id="storeItemsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Populated JS -->
-          </div>
-        </div>
-
-        <!-- Right Col: Seller Reviews & Ratings -->
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <i class="fa-solid fa-comments text-amber-500"></i>
-              <span>Customer Reviews</span>
-            </h3>
-            <button onclick="toggleReviewModal(true)" class="text-xs font-bold text-emerald-600 hover:text-emerald-700">+ Add Review</button>
-          </div>
-
-          <div id="storeReviewsContainer" class="space-y-3">
-            <!-- Populated JS -->
-          </div>
-        </div>
-
-      </div>
+  <!-- Main Content Grid -->
+  <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="itemsGrid">
+      <!-- Items rendered dynamically via JavaScript -->
     </div>
-
   </main>
 
+  <!-- FLOATING ACTION BUTTON -->
+  <button onclick="handleListButtonClick()" type="button" class="md:hidden fixed bottom-6 right-6 bg-emerald-600 text-white font-bold px-5 py-4 rounded-full shadow-2xl flex items-center space-x-2 z-50 active:scale-95 transition cursor-pointer">
+    <i class="fa-solid fa-camera text-xl"></i>
+    <span class="text-base">Sell Item</span>
+  </button>
 
-  <!-- MODAL 1: AUTHENTICATION (Login / Sign Up) -->
-  <div id="authModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+  <!-- AUTHENTICATION / USER DASHBOARD MODAL -->
+  <div id="accountModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeAccountModal(event)">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
       
+      <!-- Modal Header -->
       <div class="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
-        <h3 id="authModalTitle" class="font-bold text-lg">Sign In to YardSale Hub</h3>
-        <button onclick="toggleAuthModal(false)" class="text-emerald-100 hover:text-white text-2xl font-bold px-2">&times;</button>
+        <h3 id="accountModalTitle" class="font-bold text-lg"><i class="fa-solid fa-circle-user mr-2"></i>Seller Account & Dashboard</h3>
+        <button onclick="toggleElement('accountModal', false)" type="button" class="text-emerald-100 hover:text-white text-2xl font-bold cursor-pointer px-2">&times;</button>
       </div>
 
-      <div class="p-6">
-        <!-- Auth Mode Switcher -->
-        <div class="flex bg-slate-100 p-1 rounded-xl mb-5 text-sm font-semibold">
-          <button id="tabSignIn" onclick="setAuthTab('login')" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-900 transition">Sign In</button>
-          <button id="tabSignUp" onclick="setAuthTab('signup')" class="flex-1 py-2 rounded-lg text-slate-500 transition">Create Account</button>
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-4 text-sm flex-1">
+        
+        <!-- STATE A: LOGIN / REGISTER FORM -->
+        <div id="authFormsContainer">
+          <div class="flex border-b border-slate-200 mb-4">
+            <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 font-bold text-emerald-600 border-b-2 border-emerald-600 text-center">Sign In</button>
+            <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-2 font-semibold text-slate-400 text-center">Create Account</button>
+          </div>
+
+          <!-- Login Form -->
+          <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Username or Business Name</label>
+              <input type="text" id="loginUsername" required placeholder="e.g. NederlandDave" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Password</label>
+              <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow transition">Sign In</button>
+          </form>
+
+          <!-- Register Form -->
+          <form id="registerForm" onsubmit="handleRegister(event)" class="hidden space-y-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Seller / Display Name *</label>
+              <input type="text" id="regName" required placeholder="e.g. Dave's Mid-County Sales" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Username *</label>
+              <input type="text" id="regUsername" required placeholder="e.g. NederlandDave" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Neighborhood Location</label>
+              <select id="regLocation" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white">
+                <option value="Nederland">Nederland</option>
+                <option value="Groves">Groves</option>
+                <option value="West Beaumont">West Beaumont</option>
+                <option value="Orange County">Orange County</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Password *</label>
+              <input type="password" id="regPassword" required placeholder="Create a password" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow transition">Register Seller Profile</button>
+          </form>
         </div>
 
-        <!-- LOGIN FORM -->
-        <form id="formLogin" onsubmit="handleLoginSubmit(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
-            <input type="email" id="loginEmail" required value="seller@yardsale.com" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <!-- STATE B: LOGGED IN USER DASHBOARD -->
+        <div id="userDashboardContainer" class="hidden space-y-4">
+          <div class="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-full bg-emerald-600 text-white font-bold text-xl flex items-center justify-center" id="dashAvatar">D</div>
+              <div>
+                <h4 id="dashName" class="font-bold text-slate-900 text-base">Dave's Mid-County Sales</h4>
+                <p id="dashMeta" class="text-xs text-slate-500">Nederland • ⭐ 5.0 (0 Reviews)</p>
+              </div>
+            </div>
+            <button onclick="handleLogout()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-semibold">Sign Out</button>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
-            <input type="password" id="loginPassword" required value="password123" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow text-sm">
-            Sign In
-          </button>
-        </form>
 
-        <!-- SIGN UP FORM -->
-        <form id="formSignUp" onsubmit="handleSignUpSubmit(event)" class="hidden space-y-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Account Type</label>
-            <select id="signUpRole" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium">
-              <option value="seller">Seller Account (Post listings & manage store)</option>
-              <option value="buyer">Buyer Account (Browse, review & bundle)</option>
-            </select>
+          <div class="flex gap-2">
+            <button onclick="toggleModal(true); toggleElement('accountModal', false);" class="flex-1 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold py-2.5 rounded-xl transition text-center shadow">
+              <i class="fa-solid fa-plus mr-1"></i> List New Item
+            </button>
+            <button onclick="viewMyStorefront()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition text-center">
+              <i class="fa-solid fa-store mr-1"></i> View My Store
+            </button>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name or Store Name</label>
-            <input type="text" id="signUpName" required placeholder="e.g. Sarah's Porch Sale" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
-            <input type="email" id="signUpEmail" required placeholder="you@example.com" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Neighborhood / City</label>
-            <select id="signUpLocation" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-              <option value="Nederland">Nederland</option>
-              <option value="Groves">Groves</option>
-              <option value="West Beaumont">West Beaumont</option>
-              <option value="Orange County">Orange County</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
-            <input type="password" id="signUpPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow text-sm">
-            Create Account
-          </button>
-        </form>
 
-        <!-- Demo Accounts Quick Sign In -->
-        <div class="mt-6 border-t border-slate-200 pt-4">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Quick Demo Login</p>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="quickLogin('seller1')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg transition">Demo Seller 1</button>
-            <button onclick="quickLogin('buyer1')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg transition">Demo Buyer</button>
+          <div>
+            <h5 class="font-bold text-slate-800 mb-2">My Active Listings</h5>
+            <div id="dashListingsContainer" class="space-y-2 max-h-56 overflow-y-auto">
+              <!-- Dynamically populated -->
+            </div>
           </div>
         </div>
 
@@ -334,41 +178,95 @@
     </div>
   </div>
 
-  <!-- MODAL 2: POST / EDIT ITEM -->
-  <div id="postModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div class="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
-        <h3 id="postModalTitle" class="font-bold text-lg"><i class="fa-solid fa-tag mr-2"></i>Post Item for Sale</h3>
-        <button onclick="togglePostModal(false)" class="text-emerald-100 hover:text-white text-2xl font-bold px-2">&times;</button>
+  <!-- SELLER PUBLIC PROFILE / REVIEWS MODAL -->
+  <div id="sellerProfileModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="toggleElement('sellerProfileModal', false)">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+      <div class="bg-slate-900 text-white p-6 relative">
+        <button onclick="toggleElement('sellerProfileModal', false)" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+        <div class="flex items-center space-x-4">
+          <div id="profileAvatar" class="w-16 h-16 rounded-full bg-emerald-500 text-white font-bold text-2xl flex items-center justify-center border-2 border-white shadow">S</div>
+          <div>
+            <h3 id="profileName" class="font-bold text-xl text-white">Seller Profile</h3>
+            <p id="profileLocation" class="text-xs text-slate-300">Nederland, TX</p>
+            <div id="profileRating" class="text-amber-400 text-sm mt-1">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i> 
+              <span class="text-slate-200 text-xs ml-1">(5.0)</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <form id="itemForm" onsubmit="handleItemFormSubmit(event)" class="p-6 overflow-y-auto space-y-4 text-sm flex-1 custom-scrollbar">
-        <input type="hidden" id="editItemId" value="">
+      <div class="p-6 overflow-y-auto space-y-6 text-sm flex-1">
+        <div>
+          <button id="filterSellerItemsBtn" onclick="" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition">
+            View All Items From This Seller
+          </button>
+        </div>
 
         <div>
+          <h4 class="font-bold text-slate-900 text-base mb-3">Leave a Buyer Review & Rating</h4>
+          <form onsubmit="handleReviewSubmit(event)" class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Your Rating</label>
+              <select id="reviewRating" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                <option value="5">⭐⭐⭐⭐⭐ (5/5 Stars)</option>
+                <option value="4">⭐⭐⭐⭐ (4/5 Stars)</option>
+                <option value="3">⭐⭐⭐ (3/5 Stars)</option>
+                <option value="2">⭐⭐ (2/5 Stars)</option>
+                <option value="1">⭐ (1/5 Stars)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Comment</label>
+              <textarea id="reviewComment" required placeholder="Great neighborhood seller! Fast porch pickup..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500" rows="2"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs">Submit Review</button>
+          </form>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-900 text-base mb-3">Buyer Reviews</h4>
+          <div id="reviewsContainer" class="space-y-3">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seller Item Upload Modal -->
+  <div id="sellerModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="handleOverlayClick(event)">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+      <div class="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
+        <h3 class="font-bold text-lg"><i class="fa-solid fa-tag mr-2"></i>Post an Item for Sale</h3>
+        <button onclick="toggleModal(false)" type="button" class="text-emerald-100 hover:text-white text-2xl font-bold cursor-pointer px-2">&times;</button>
+      </div>
+
+      <form id="itemForm" onsubmit="handleFormSubmit(event)" class="p-6 overflow-y-auto space-y-4 text-sm flex-1">
+        <div>
           <label class="block font-semibold text-slate-700 mb-1">Item Title *</label>
-          <input type="text" id="itemTitle" required placeholder="e.g. Vintage Oak Dining Chair Set" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <input type="text" id="itemTitle" required placeholder="e.g. Lawn Mower, Wooden Dresser" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Price ($) *</label>
-            <input type="number" id="itemPrice" required placeholder="45" min="0" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <input type="number" id="itemPrice" required placeholder="25" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Category *</label>
-            <select id="itemCategory" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-              <option value="Furniture">Furniture</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Tools">Tools & Lawn</option>
-              <option value="Collectibles">Collectibles & Toys</option>
+            <label class="block font-semibold text-slate-700 mb-1">Neighborhood *</label>
+            <select id="itemLocation" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white">
+              <option value="Nederland">Nederland</option>
+              <option value="Groves">Groves</option>
+              <option value="West Beaumont">West Beaumont</option>
+              <option value="Orange County">Orange County</option>
             </select>
           </div>
         </div>
 
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Pickup Type</label>
-          <select id="pickupType" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+          <select id="pickupType" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white">
             <option value="Porch Pickup">Porch Pickup</option>
             <option value="Driveway Sale">Driveway Sale</option>
             <option value="Public Meetup">Public Meetup</option>
@@ -376,820 +274,498 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Item Photo URL</label>
-          <input type="url" id="itemPhoto" placeholder="https://images.unsplash.com/..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs">
+          <label class="block font-semibold text-slate-700 mb-1">Item Photo *</label>
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-emerald-500 transition bg-slate-50 cursor-pointer relative mb-3">
+            <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageFileSelect(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div id="uploadPrompt" class="space-y-1">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-emerald-600"></i>
+              <p class="text-xs font-semibold text-slate-700">Tap to upload photo or take picture</p>
+              <p class="text-[10px] text-slate-400">JPG, PNG, or WEBP from gallery or camera</p>
+            </div>
+            <div id="imagePreviewContainer" class="hidden relative">
+              <img id="imagePreview" src="" alt="Preview" class="max-h-36 mx-auto rounded-lg object-cover shadow-sm">
+              <button type="button" onclick="clearSelectedImage(event)" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold z-20 shadow">&times;</button>
+            </div>
+          </div>
+
+          <p class="text-xs text-center text-slate-400 mb-2">— OR —</p>
+          <input type="url" id="itemPhoto" placeholder="Paste Photo Image URL (Optional)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-xs">
           
-          <p class="text-xs text-slate-500 mt-2">Quick Photo Presets:</p>
-          <div class="flex flex-wrap gap-1.5 mt-1">
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg border border-slate-300 font-medium">Sofa</button>
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg border border-slate-300 font-medium">Toolbox</button>
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg border border-slate-300 font-medium">Bicycle</button>
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg border border-slate-300 font-medium">Headphones</button>
+          <div class="flex gap-2 mt-2">
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
           </div>
         </div>
 
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Item Description</label>
-          <textarea id="itemDesc" rows="3" placeholder="Describe item condition, measurements, or sale terms..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+          <textarea id="itemDesc" rows="2" placeholder="Describe condition or pickup terms..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"></textarea>
         </div>
 
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow cursor-pointer">
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow mt-2 cursor-pointer">
           Publish Listing
         </button>
       </form>
     </div>
   </div>
 
-  <!-- MODAL 3: RATE & REVIEW SELLER -->
-  <div id="reviewModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-      <div class="bg-amber-500 text-slate-900 px-6 py-4 flex items-center justify-between">
-        <h3 class="font-bold text-lg"><i class="fa-solid fa-star mr-2"></i>Rate & Review Seller</h3>
-        <button onclick="toggleReviewModal(false)" class="text-slate-800 hover:text-black text-2xl font-bold px-2">&times;</button>
-      </div>
-
-      <form onsubmit="handleReviewSubmit(event)" class="p-6 space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Select Star Rating</label>
-          <div class="flex items-center space-x-2 text-2xl text-slate-300 cursor-pointer" id="starPicker">
-            <i class="fa-solid fa-star hover:text-amber-400" onclick="setRating(1)"></i>
-            <i class="fa-solid fa-star hover:text-amber-400" onclick="setRating(2)"></i>
-            <i class="fa-solid fa-star hover:text-amber-400" onclick="setRating(3)"></i>
-            <i class="fa-solid fa-star hover:text-amber-400" onclick="setRating(4)"></i>
-            <i class="fa-solid fa-star hover:text-amber-400" onclick="setRating(5)"></i>
-          </div>
-          <input type="hidden" id="reviewRatingVal" value="5">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Your Feedback Comment</label>
-          <textarea id="reviewComment" rows="3" required placeholder="Fast pickup, accurately described items, fair prices!" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"></textarea>
-        </div>
-
-        <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm">
-          Submit Seller Review
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL 4: ITEM DETAILS & COMMENTS -->
-  <div id="itemDetailModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div class="relative h-64 bg-slate-900">
-        <img id="modalDetailImage" src="" class="w-full h-full object-cover">
-        <button onclick="toggleItemDetailModal(false)" class="absolute top-4 right-4 bg-slate-900/80 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">&times;</button>
-        <span id="modalDetailPrice" class="absolute bottom-4 right-4 bg-emerald-600 text-white font-black text-xl px-4 py-1.5 rounded-xl shadow"></span>
-      </div>
-
-      <div class="p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
-        <div>
-          <div class="flex items-center justify-between">
-            <span id="modalDetailCategory" class="text-xs font-bold uppercase tracking-wider text-emerald-600"></span>
-            <span id="modalDetailLocation" class="text-xs font-semibold text-slate-500"></span>
-          </div>
-          <h2 id="modalDetailTitle" class="text-2xl font-extrabold text-slate-900 mt-1"></h2>
-          <p id="modalDetailDesc" class="text-slate-600 text-sm mt-2 leading-relaxed"></p>
-        </div>
-
-        <!-- Seller Mini Card -->
-        <div id="modalDetailSellerBox" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition">
-          <!-- Populated JS -->
-        </div>
-
-        <!-- Buyer-Seller Comments Section -->
-        <div class="border-t border-slate-200 pt-4">
-          <h4 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-comments text-emerald-600"></i>
-            <span>Public Item Questions & Comments</span>
-          </h4>
-
-          <div id="itemCommentsList" class="space-y-3 mb-4 max-h-48 overflow-y-auto custom-scrollbar">
-            <!-- Populated JS -->
-          </div>
-
-          <form onsubmit="handleCommentSubmit(event)" class="flex gap-2">
-            <input type="text" id="commentInput" placeholder="Ask seller a question about this item..." class="flex-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-sm transition">Post</button>
-          </form>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- DRAWER: BUNDLE CART -->
-  <div id="cartDrawer" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 transition-opacity" onclick="toggleCartDrawer(false)">
-    <div class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col p-6 overflow-y-auto" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
-        <div>
-          <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-basket-shopping text-emerald-600 mr-2"></i>My Package Bundle</h3>
-          <p class="text-xs text-slate-500">Combine items from sellers to offer batch discounts</p>
-        </div>
-        <button onclick="toggleCartDrawer(false)" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
-      </div>
-
-      <div id="cartItemsContainer" class="space-y-3 flex-1 custom-scrollbar">
-        <!-- Rendered JS -->
-      </div>
-
-      <div class="border-t border-slate-200 pt-4 mt-4 space-y-3">
-        <div class="flex justify-between text-sm font-semibold text-slate-600">
-          <span>Subtotal</span>
-          <span id="bundleSubtotal">$0</span>
-        </div>
-        <div class="flex justify-between text-sm font-bold text-emerald-600">
-          <span>15% Bundle Discount</span>
-          <span id="bundleDiscount">-$0</span>
-        </div>
-        <div class="flex justify-between text-lg font-extrabold text-slate-900 border-t border-slate-100 pt-2">
-          <span>Offer Total</span>
-          <span id="bundleTotal">$0</span>
-        </div>
-        <button onclick="submitBundleOffer()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow">
-          Send Bundle Offer to Sellers
-        </button>
-      </div>
-    </div>
-  </div>
-
+  <!-- JavaScript Logic -->
   <script>
-    /* ==========================================================================
-       DATA STORE & INITIAL STATE
-       ========================================================================== */
-    
-    // Default Sellers
-    var initialUsers = [
-      {
-        id: "seller1",
-        name: "Sarah's Porch Sale",
-        email: "seller@yardsale.com",
-        role: "seller",
-        location: "Nederland",
-        handle: "sarah_nederland",
-        bio: "Moving sale! Everything priced to sell quickly. Porch pickups available all weekend.",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-        rating: 4.9
-      },
-      {
-        id: "seller2",
-        name: "Mike's Workshop Clearing",
-        email: "mike@yardsale.com",
-        role: "seller",
-        location: "Groves",
-        handle: "mike_groves_tools",
-        bio: "Downsizing my woodworking shop. Quality hand tools, power tools, and hardware.",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-        rating: 5.0
-      },
-      {
-        id: "buyer1",
-        name: "John Shopper",
-        email: "buyer@yardsale.com",
-        role: "buyer",
-        location: "West Beaumont",
-        handle: "john_beaumont",
-        bio: "Local vintage hunter and tool enthusiast.",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-        rating: 5.0
-      }
-    ];
+    var bundle = [];
+    var uploadedImageBase64 = "";
+    var currentUser = null;
+    var activeFilterSellerId = null;
+    var activeViewProfileSellerId = null;
 
-    // Default Marketplace Listings
-    var initialItems = [
+    // Seed initial marketplace items
+    var defaultItems = [
       {
-        id: "item_101",
-        sellerId: "seller1",
-        title: "Vintage Emerald Sofa Couch",
-        price: 85,
-        category: "Furniture",
+        id: 'item_sample_1',
+        sellerId: 'user_oakridge',
+        sellerName: "Oakridge Estate Sale",
+        title: "Vintage Sofa Couch",
+        price: 45,
         location: "Nederland",
         pickup: "Porch Pickup",
         photo: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80",
-        desc: "Sturdy mid-century sofa with soft fabric. Minor wear on back edge but extremely comfortable.",
-        date: "2 hours ago"
+        desc: "Great condition, solid wooden frame with retro green fabric."
       },
       {
-        id: "item_102",
-        sellerId: "seller2",
-        title: "Dewalt Heavy Duty Toolbox Set",
-        price: 40,
-        category: "Tools",
+        id: 'item_sample_2',
+        sellerId: 'user_39th',
+        sellerName: "39th St Multi-Family",
+        title: "Wireless Headphones",
+        price: 20,
         location: "Groves",
         pickup: "Driveway Sale",
-        photo: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80",
-        desc: "Includes heavy duty latching case and full socket set attachments.",
-        date: "4 hours ago"
-      },
-      {
-        id: "item_103",
-        sellerId: "seller1",
-        title: "Retro Road Cruiser Bicycle",
-        price: 65,
-        category: "Collectibles",
-        location: "Nederland",
-        pickup: "Porch Pickup",
-        photo: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80",
-        desc: "26 inch wheels, recently tuned up with fresh tires. Ready to ride!",
-        date: "1 day ago"
-      },
-      {
-        id: "item_104",
-        sellerId: "seller2",
-        title: "Wireless Bluetooth Headphones",
-        price: 25,
-        category: "Electronics",
-        location: "Groves",
-        pickup: "Public Meetup",
         photo: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-        desc: "Noise cancelling headphones with charger and original box.",
-        date: "1 day ago"
+        desc: "Barely used, includes original charging case and cable."
       }
     ];
 
-    // Default Seller Reviews
-    var initialReviews = [
-      {
-        id: "rev_1",
-        sellerId: "seller1",
-        reviewerName: "John S.",
-        rating: 5,
-        comment: "Sarah made porch pickup super smooth. Couch was exactly as described!",
-        date: "Yesterday"
-      },
-      {
-        id: "rev_2",
-        sellerId: "seller2",
-        reviewerName: "Sarah M.",
-        rating: 5,
-        comment: "Great quality tools! Fair prices and awesome communication.",
-        date: "3 days ago"
-      }
-    ];
-
-    // Item Comments
-    var initialComments = [
-      {
-        itemId: "item_101",
-        author: "John Shopper",
-        text: "Hi! Can you measure the length of the sofa for me?",
-        date: "1 hour ago"
-      },
-      {
-        itemId: "item_101",
-        author: "Sarah's Porch Sale",
-        text: "Sure John! It is 74 inches long.",
-        date: "45 mins ago"
-      }
-    ];
-
-    // Local Storage Helpers
-    function getStoredData(key, defaultVal) {
-      var data = localStorage.getItem('yardsale_' + key);
-      return data ? JSON.parse(data) : defaultVal;
+    // Data Storage Helpers
+    function getStoredItems() {
+      var saved = localStorage.getItem('yardsale_all_items');
+      return saved ? JSON.parse(saved) : defaultItems;
     }
 
-    function setStoredData(key, val) {
-      localStorage.setItem('yardsale_' + key, JSON.stringify(val));
+    function saveStoredItems(items) {
+      localStorage.setItem('yardsale_all_items', JSON.stringify(items));
     }
 
-    // App State
-    var users = getStoredData('users', initialUsers);
-    var items = getStoredData('items', initialItems);
-    var reviews = getStoredData('reviews', initialReviews);
-    var comments = getStoredData('comments', initialComments);
-    var currentUser = getStoredData('currentUser', users[0]); // Default logged in as Sarah
-    var bundle = getStoredData('bundle', []);
-    var currentCategory = 'ALL';
-    var activeDetailItemId = null;
-    var activeStorefrontUserId = null;
-
-    /* ==========================================================================
-       ROUTING & UI NAVIGATION
-       ========================================================================== */
-
-    function navigateTo(viewName) {
-      document.getElementById('viewMarketplace').classList.add('hidden');
-      document.getElementById('viewDashboard').classList.add('hidden');
-      document.getElementById('viewPublicProfile').classList.add('hidden');
-
-      if (viewName === 'marketplace') {
-        document.getElementById('viewMarketplace').classList.remove('hidden');
-        renderMarketplace();
-      } else if (viewName === 'dashboard') {
-        if (!currentUser) {
-          toggleAuthModal(true);
-          return;
-        }
-        document.getElementById('viewDashboard').classList.remove('hidden');
-        renderDashboard();
-      } else if (viewName === 'storefront') {
-        document.getElementById('viewPublicProfile').classList.remove('hidden');
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    function getStoredUsers() {
+      return JSON.parse(localStorage.getItem('yardsale_users') || '{}');
     }
 
-    function updateNavAuthUI() {
-      var container = document.getElementById('navAuthArea');
-      if (!container) return;
+    function saveStoredUsers(users) {
+      localStorage.setItem('yardsale_users', JSON.stringify(users));
+    }
 
+    function getStoredReviews() {
+      return JSON.parse(localStorage.getItem('yardsale_reviews') || '{}');
+    }
+
+    function saveStoredReviews(reviews) {
+      localStorage.setItem('yardsale_reviews', JSON.stringify(reviews));
+    }
+
+    // Modal Helpers
+    function toggleElement(id, show) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (show) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+    }
+
+    function toggleModal(show) { toggleElement('sellerModal', show); }
+    function handleOverlayClick(e) { if (e.target.id === 'sellerModal') toggleModal(false); }
+
+    function handleListButtonClick() {
       if (!currentUser) {
-        container.innerHTML = `
-          <button onclick="toggleAuthModal(true)" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-xl text-xs md:text-sm transition flex items-center space-x-1.5 shadow">
-            <i class="fa-solid fa-right-to-bracket"></i>
-            <span>Sign In / Register</span>
-          </button>
-        `;
+        alert("Please sign in or create a seller account first to list items!");
+        openAccountModal();
       } else {
-        var isSeller = currentUser.role === 'seller';
-        container.innerHTML = `
-          ${isSeller ? `
-            <button onclick="navigateTo('dashboard')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-3 py-2 rounded-xl text-xs md:text-sm transition flex items-center space-x-1.5 border border-emerald-500/40">
-              <i class="fa-solid fa-chart-line text-amber-300"></i>
-              <span class="hidden md:inline">Seller Hub</span>
-            </button>
-          ` : ''}
-
-          <div class="relative group">
-            <button class="flex items-center space-x-2 bg-emerald-800 hover:bg-emerald-900 p-1.5 px-2.5 rounded-xl transition text-xs font-semibold">
-              <img src="${currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80'}" class="w-6 h-6 rounded-full object-cover">
-              <span class="hidden lg:inline">${currentUser.name}</span>
-              <i class="fa-solid fa-chevron-down text-[10px]"></i>
-            </button>
-            <div class="absolute right-0 mt-1 w-48 bg-white text-slate-800 rounded-xl shadow-xl py-2 hidden group-hover:block border border-slate-200 z-50">
-              <div class="px-4 py-2 border-b border-slate-100">
-                <p class="font-bold text-xs truncate">${currentUser.name}</p>
-                <p class="text-[10px] text-slate-500 capitalize">${currentUser.role} Account</p>
-              </div>
-              ${isSeller ? `
-                <a onclick="navigateTo('dashboard')" class="block px-4 py-2 text-xs font-semibold hover:bg-slate-50 cursor-pointer"><i class="fa-solid fa-store mr-2 text-emerald-600"></i>Seller Dashboard</a>
-                <a onclick="openPublicProfile('${currentUser.id}')" class="block px-4 py-2 text-xs font-semibold hover:bg-slate-50 cursor-pointer"><i class="fa-solid fa-shop mr-2 text-emerald-600"></i>My Public Store</a>
-              ` : ''}
-              <a onclick="handleLogout()" class="block px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer border-t border-slate-100"><i class="fa-solid fa-right-from-bracket mr-2"></i>Sign Out</a>
-            </div>
-          </div>
-        `;
+        toggleModal(true);
       }
     }
 
-    /* ==========================================================================
-       VIEW RENDERING LOGIC
-       ========================================================================== */
-
-    function renderMarketplace() {
-      var grid = document.getElementById('itemsGrid');
-      if (!grid) return;
-
-      var searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase();
-      var locVal = document.getElementById('locationFilter')?.value || 'ALL';
-
-      var filtered = items.filter(function(item) {
-        var seller = users.find(function(u) { return u.id === item.sellerId; }) || {};
-        var matchesCat = (currentCategory === 'ALL' || item.category === currentCategory);
-        var matchesLoc = (locVal === 'ALL' || item.location === locVal);
-        var matchesSearch = item.title.toLowerCase().includes(searchVal) || 
-                          item.desc.toLowerCase().includes(searchVal) ||
-                          (seller.name && seller.name.toLowerCase().includes(searchVal));
-
-        return matchesCat && matchesLoc && matchesSearch;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-200 p-8">
-            <i class="fa-solid fa-box-open text-4xl text-slate-300 mb-3"></i>
-            <h3 class="font-bold text-slate-700 text-lg">No Listings Found</h3>
-            <p class="text-xs text-slate-500 mt-1">Try resetting search filters or post a new item!</p>
-          </div>
-        `;
-        return;
+    function openAccountModal() {
+      if (currentUser) {
+        renderDashboard();
+      } else {
+        switchAuthTab('login');
       }
-
-      grid.innerHTML = filtered.map(function(item) {
-        var seller = users.find(function(u) { return u.id === item.sellerId; }) || { name: "Seller", rating: 5.0 };
-        return `
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition flex flex-col group">
-            <div class="relative h-48 bg-slate-100 cursor-pointer overflow-hidden" onclick="openItemDetail('${item.id}')">
-              <img src="${item.photo}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-              <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-lg shadow-sm">${item.location} • ${item.pickup}</span>
-              <span class="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-slate-900 font-black text-base px-3 py-1 rounded-lg shadow-sm">$${item.price}</span>
-            </div>
-            
-            <div class="p-5 flex-1 flex flex-col justify-between">
-              <div>
-                <!-- Seller Link Header -->
-                <div class="flex items-center justify-between text-xs text-slate-500 mb-2 cursor-pointer hover:text-emerald-600" onclick="openPublicProfile('${seller.id}')">
-                  <div class="flex items-center space-x-1.5 font-semibold text-slate-700">
-                    <img src="${seller.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80'}" class="w-4 h-4 rounded-full">
-                    <span class="truncate">${seller.name}</span>
-                  </div>
-                  <span class="text-amber-500 font-bold"><i class="fa-solid fa-star text-[10px]"></i> ${seller.rating || 5.0}</span>
-                </div>
-
-                <h3 class="font-bold text-slate-900 text-lg mb-1 cursor-pointer hover:text-emerald-600 line-clamp-1" onclick="openItemDetail('${item.id}')">${item.title}</h3>
-                <p class="text-slate-600 text-xs line-clamp-2 mb-4 leading-relaxed">${item.desc}</p>
-              </div>
-
-              <div class="flex gap-2 pt-2 border-t border-slate-100">
-                <button onclick="addToBundle('${item.id}')" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-xs">
-                  <i class="fa-solid fa-plus"></i>
-                  <span>Add to Bundle</span>
-                </button>
-                <button onclick="openItemDetail('${item.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl transition text-xs font-semibold">
-                  <i class="fa-solid fa-circle-info"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
+      toggleElement('accountModal', true);
     }
 
-    function renderDashboard() {
-      if (!currentUser || currentUser.role !== 'seller') return;
+    function closeAccountModal(e) {
+      if (e.target.id === 'accountModal') toggleElement('accountModal', false);
+    }
 
-      document.getElementById('dashAvatar').src = currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80';
-      document.getElementById('dashSellerName').innerText = currentUser.name;
-      document.getElementById('dashHandle').innerText = '@' + (currentUser.handle || 'seller');
-
-      var myItems = items.filter(function(i) { return i.sellerId === currentUser.id; });
-      var myReviews = reviews.filter(function(r) { return r.sellerId === currentUser.id; });
-
-      document.getElementById('dashActiveCount').innerText = myItems.length;
-      document.getElementById('dashTotalSales').innerText = myItems.length + ' Active Listings';
-      document.getElementById('dashReviewCount').innerText = myReviews.length;
+    function switchAuthTab(tab) {
+      var isLogin = tab === 'login';
+      document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+      document.getElementById('registerForm').classList.toggle('hidden', isLogin);
       
-      var avgRating = currentUser.rating || 5.0;
-      document.getElementById('dashRating').innerHTML = '<i class="fa-solid fa-star"></i> ' + avgRating;
-      document.getElementById('dashRatingBig').innerText = avgRating + ' / 5.0';
+      document.getElementById('tabLogin').className = isLogin 
+        ? "flex-1 py-2 font-bold text-emerald-600 border-b-2 border-emerald-600 text-center cursor-pointer"
+        : "flex-1 py-2 font-semibold text-slate-400 text-center cursor-pointer";
+        
+      document.getElementById('tabRegister').className = !isLogin 
+        ? "flex-1 py-2 font-bold text-emerald-600 border-b-2 border-emerald-600 text-center cursor-pointer"
+        : "flex-1 py-2 font-semibold text-slate-400 text-center cursor-pointer";
+    }
 
-      var container = document.getElementById('dashboardItemsContainer');
-      if (myItems.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-10 text-slate-400">
-            <i class="fa-solid fa-box-open text-3xl mb-2"></i>
-            <p class="text-sm">You haven't listed any items yet.</p>
-            <button onclick="togglePostModal(true)" class="mt-3 bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl text-xs">Post First Item</button>
-          </div>
-        `;
+    // Authentication Handlers
+    function handleRegister(e) {
+      e.preventDefault();
+      var username = document.getElementById('regUsername').value.trim().toLowerCase();
+      var name = document.getElementById('regName').value.trim();
+      var location = document.getElementById('regLocation').value;
+      var password = document.getElementById('regPassword').value;
+
+      var users = getStoredUsers();
+      if (users[username]) {
+        alert("Username is already taken. Please choose another.");
         return;
       }
-
-      container.innerHTML = myItems.map(function(item) {
-        return `
-          <div class="p-4 flex items-center justify-between gap-4">
-            <div class="flex items-center space-x-3 overflow-hidden">
-              <img src="${item.photo}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-slate-200">
-              <div class="truncate">
-                <h4 class="font-bold text-slate-900 text-sm truncate">${item.title}</h4>
-                <p class="text-xs text-slate-500">$${item.price} • ${item.category} • ${item.pickup}</p>
-              </div>
-            </div>
-            <div class="flex items-center space-x-2 flex-shrink-0">
-              <button onclick="editItem('${item.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-                <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
-              </button>
-              <button onclick="deleteItem('${item.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-red-200">
-                <i class="fa-solid fa-trash-can mr-1"></i> Delete
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function openPublicProfile(sellerId) {
-      activeStorefrontUserId = sellerId;
-      var seller = users.find(function(u) { return u.id === sellerId; });
-      if (!seller) return;
-
-      document.getElementById('storeAvatar').src = seller.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80';
-      document.getElementById('storeName').innerText = seller.name;
-      document.getElementById('storeHandle').innerText = '@' + (seller.handle || 'seller');
-      document.getElementById('storeBio').innerText = seller.bio || 'Local neighborhood seller on YardSale Hub.';
-      document.getElementById('storeLocation').innerHTML = '<i class="fa-solid fa-location-dot text-red-500 mr-1"></i>' + (seller.location || 'Nederland');
-
-      var sellerReviews = reviews.filter(function(r) { return r.sellerId === sellerId; });
-      document.getElementById('storeStarRating').innerText = '★ ' + (seller.rating || 5.0);
-      document.getElementById('storeReviewCount').innerText = '(' + sellerReviews.length + ' reviews)';
-
-      // Render Seller Items
-      var sellerItems = items.filter(function(i) { return i.sellerId === sellerId; });
-      var itemsGrid = document.getElementById('storeItemsGrid');
-
-      if (sellerItems.length === 0) {
-        itemsGrid.innerHTML = `
-          <div class="col-span-full bg-white p-6 rounded-2xl border border-slate-200 text-center text-slate-400">
-            <p class="text-sm">This seller has no active listings currently.</p>
-          </div>
-        `;
-      } else {
-        itemsGrid.innerHTML = sellerItems.map(function(item) {
-          return `
-            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col">
-              <img src="${item.photo}" class="h-36 w-full object-cover">
-              <div class="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <span class="text-[10px] font-bold uppercase text-emerald-600">${item.category}</span>
-                    <span class="font-bold text-slate-900 text-sm">$${item.price}</span>
-                  </div>
-                  <h4 class="font-bold text-sm text-slate-800 line-clamp-1">${item.title}</h4>
-                </div>
-                <button onclick="addToBundle('${item.id}')" class="mt-3 w-full bg-slate-900 text-white text-xs font-semibold py-2 rounded-lg hover:bg-slate-800">
-                  + Add to Bundle
-                </button>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      // Render Reviews
-      var revContainer = document.getElementById('storeReviewsContainer');
-      if (sellerReviews.length === 0) {
-        revContainer.innerHTML = `
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 text-center text-slate-400">
-            <p class="text-sm">No reviews yet for this seller. Be the first!</p>
-          </div>
-        `;
-      } else {
-        revContainer.innerHTML = sellerReviews.map(function(rev) {
-          var stars = '★'.repeat(rev.rating) + '☆'.repeat(5 - rev.rating);
-          return `
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-xs text-slate-800">${rev.reviewerName}</span>
-                <span class="text-amber-400 text-xs">${stars}</span>
-              </div>
-              <p class="text-slate-600 text-xs leading-relaxed">${rev.comment}</p>
-              <p class="text-[10px] text-slate-400 pt-1">${rev.date}</p>
-            </div>
-          `;
-        }).join('');
-      }
-
-      navigateTo('storefront');
-    }
-
-    /* ==========================================================================
-       USER AUTHENTICATION CONTROLLER
-       ========================================================================== */
-
-    function toggleAuthModal(show) {
-      var modal = document.getElementById('authModal');
-      if (show) modal.classList.remove('hidden');
-      else modal.classList.add('hidden');
-    }
-
-    function setAuthTab(tab) {
-      var formLogin = document.getElementById('formLogin');
-      var formSignUp = document.getElementById('formSignUp');
-      var tabSignIn = document.getElementById('tabSignIn');
-      var tabSignUp = document.getElementById('tabSignUp');
-
-      if (tab === 'login') {
-        formLogin.classList.remove('hidden');
-        formSignUp.classList.add('hidden');
-        tabSignIn.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
-        tabSignIn.classList.remove('text-slate-500');
-        tabSignUp.classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
-        tabSignUp.classList.add('text-slate-500');
-      } else {
-        formLogin.classList.add('hidden');
-        formSignUp.classList.remove('hidden');
-        tabSignUp.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
-        tabSignUp.classList.remove('text-slate-500');
-        tabSignIn.classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
-        tabSignIn.classList.add('text-slate-500');
-      }
-    }
-
-    function handleLoginSubmit(e) {
-      e.preventDefault();
-      var email = document.getElementById('loginEmail').value;
-      var found = users.find(function(u) { return u.email.toLowerCase() === email.toLowerCase(); });
-
-      if (found) {
-        currentUser = found;
-        setStoredData('currentUser', currentUser);
-        updateNavAuthUI();
-        toggleAuthModal(false);
-        showToast("Signed in successfully as " + currentUser.name + "!");
-        if (currentUser.role === 'seller') navigateTo('dashboard');
-      } else {
-        showToast("User email not found. Please sign up!", "error");
-      }
-    }
-
-    function handleSignUpSubmit(e) {
-      e.preventDefault();
-      var role = document.getElementById('signUpRole').value;
-      var name = document.getElementById('signUpName').value;
-      var email = document.getElementById('signUpEmail').value;
-      var loc = document.getElementById('signUpLocation').value;
 
       var newUser = {
         id: 'user_' + Date.now(),
+        username: username,
         name: name,
-        email: email,
-        role: role,
-        location: loc,
-        handle: name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-        bio: role === 'seller' ? 'Verified neighborhood seller.' : 'Active local community member.',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-        rating: 5.0
+        location: location,
+        password: password
       };
 
-      users.push(newUser);
-      setStoredData('users', users);
-      currentUser = newUser;
-      setStoredData('currentUser', currentUser);
+      users[username] = newUser;
+      saveStoredUsers(users);
 
-      updateNavAuthUI();
-      toggleAuthModal(false);
-      showToast("Account created successfully!");
-      if (role === 'seller') navigateTo('dashboard');
+      currentUser = newUser;
+      localStorage.setItem('yardsale_current_user', JSON.stringify(currentUser));
+      updateNavUser();
+      renderDashboard();
+      alert("Account created! Welcome to YardSale Hub, " + name);
     }
 
-    function quickLogin(userId) {
-      var user = users.find(function(u) { return u.id === userId; });
-      if (user) {
-        currentUser = user;
-        setStoredData('currentUser', currentUser);
-        updateNavAuthUI();
-        toggleAuthModal(false);
-        showToast("Logged in as " + user.name);
-        if (user.role === 'seller') navigateTo('dashboard');
-        else navigateTo('marketplace');
+    function handleLogin(e) {
+      e.preventDefault();
+      var username = document.getElementById('loginUsername').value.trim().toLowerCase();
+      var password = document.getElementById('loginPassword').value;
+
+      var users = getStoredUsers();
+      var user = users[username];
+
+      if (!user || user.password !== password) {
+        alert("Invalid username or password.");
+        return;
       }
+
+      currentUser = user;
+      localStorage.setItem('yardsale_current_user', JSON.stringify(currentUser));
+      updateNavUser();
+      renderDashboard();
     }
 
     function handleLogout() {
       currentUser = null;
-      setStoredData('currentUser', null);
-      updateNavAuthUI();
-      navigateTo('marketplace');
-      showToast("Signed out.");
+      localStorage.removeItem('yardsale_current_user');
+      updateNavUser();
+      document.getElementById('authFormsContainer').classList.remove('hidden');
+      document.getElementById('userDashboardContainer').classList.add('hidden');
     }
 
-    /* ==========================================================================
-       MANAGEMENT: ITEM LISTINGS
-       ========================================================================== */
+    function updateNavUser() {
+      var navText = document.getElementById('accountNavText');
+      if (currentUser) {
+        navText.innerText = currentUser.name;
+      } else {
+        navText.innerText = "Sign In / Dashboard";
+      }
+    }
 
-    function togglePostModal(show) {
-      if (show && (!currentUser || currentUser.role !== 'seller')) {
-        showToast("You must be logged in as a Seller to post listings.", "error");
-        toggleAuthModal(true);
+    function renderDashboard() {
+      document.getElementById('authFormsContainer').classList.add('hidden');
+      document.getElementById('userDashboardContainer').classList.remove('hidden');
+
+      document.getElementById('dashName').innerText = currentUser.name;
+      document.getElementById('dashAvatar').innerText = currentUser.name.charAt(0).toUpperCase();
+      document.getElementById('dashMeta').innerText = currentUser.location + " • Active Seller";
+
+      var items = getStoredItems().filter(function(i) { return i.sellerId === currentUser.id; });
+      var container = document.getElementById('dashListingsContainer');
+
+      if (items.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">You have no active listings.</p>';
         return;
       }
 
-      var modal = document.getElementById('postModal');
-      if (show) {
-        document.getElementById('itemForm').reset();
-        document.getElementById('editItemId').value = "";
-        document.getElementById('postModalTitle').innerHTML = '<i class="fa-solid fa-tag mr-2"></i>Post Item for Sale';
-        modal.classList.remove('hidden');
-      } else {
-        modal.classList.add('hidden');
-      }
+      container.innerHTML = items.map(function(item) {
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center space-x-3 overflow-hidden">
+              <img src="${item.photo}" class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
+              <div class="truncate">
+                <p class="font-bold text-xs text-slate-800 truncate">${item.title}</p>
+                <p class="text-[10px] text-slate-500">$${item.price} • ${item.location}</p>
+              </div>
+            </div>
+            <button onclick="deleteListing('${item.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded-lg text-xs font-semibold">Delete</button>
+          </div>
+        `;
+      }).join('');
     }
 
-    function setPresetPhoto(url) {
-      document.getElementById('itemPhoto').value = url;
+    function viewMyStorefront() {
+      toggleElement('accountModal', false);
+      filterBySeller(currentUser.id, currentUser.name);
     }
 
-    function handleItemFormSubmit(e) {
+    // Photo Input Handlers
+    function handleImageFileSelect(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedImageBase64 = event.target.result;
+        document.getElementById('imagePreview').src = uploadedImageBase64;
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('imagePreviewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSelectedImage(e) {
+      if (e) e.stopPropagation();
+      uploadedImageBase64 = "";
+      document.getElementById('imageFileInput').value = "";
+      document.getElementById('imagePreview').src = "";
+      document.getElementById('uploadPrompt').classList.remove('hidden');
+      document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+
+    function setPhoto(url) {
+      clearSelectedImage();
+      var input = document.getElementById('itemPhoto');
+      if (input) input.value = url;
+    }
+
+    // Item Creation & Deletion
+    function handleFormSubmit(e) {
       e.preventDefault();
-      var editId = document.getElementById('editItemId').value;
+      if (!currentUser) {
+        alert("Please sign in first.");
+        return;
+      }
 
       var title = document.getElementById('itemTitle').value;
-      var price = parseFloat(document.getElementById('itemPrice').value);
-      var category = document.getElementById('itemCategory').value;
+      var price = document.getElementById('itemPrice').value;
+      var location = document.getElementById('itemLocation').value;
       var pickup = document.getElementById('pickupType').value;
-      var photo = document.getElementById('itemPhoto').value || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
-      var desc = document.getElementById('itemDesc').value;
+      var photoUrlInput = document.getElementById('itemPhoto').value;
+      var photo = uploadedImageBase64 || photoUrlInput || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
+      var desc = document.getElementById('itemDesc').value || 'Available for local pickup.';
 
-      if (editId) {
-        // Edit Existing
-        var item = items.find(function(i) { return i.id === editId; });
-        if (item) {
-          item.title = title;
-          item.price = price;
-          item.category = category;
-          item.pickup = pickup;
-          item.photo = photo;
-          item.desc = desc;
-        }
-        showToast("Listing updated!");
-      } else {
-        // Create New
-        var newItem = {
-          id: 'item_' + Date.now(),
-          sellerId: currentUser.id,
-          title: title,
-          price: price,
-          category: category,
-          location: currentUser.location || "Nederland",
-          pickup: pickup,
-          photo: photo,
-          desc: desc,
-          date: 'Just now'
-        };
-        items.unshift(newItem);
-        showToast("Item published to marketplace!");
-      }
-
-      setStoredData('items', items);
-      togglePostModal(false);
-
-      if (document.getElementById('viewDashboard').classList.contains('hidden')) {
-        renderMarketplace();
-      } else {
-        renderDashboard();
-      }
-    }
-
-    function editItem(id) {
-      var item = items.find(function(i) { return i.id === id; });
-      if (!item) return;
-
-      document.getElementById('editItemId').value = item.id;
-      document.getElementById('itemTitle').value = item.title;
-      document.getElementById('itemPrice').value = item.price;
-      document.getElementById('itemCategory').value = item.category;
-      document.getElementById('pickupType').value = item.pickup;
-      document.getElementById('itemPhoto').value = item.photo;
-      document.getElementById('itemDesc').value = item.desc;
-
-      document.getElementById('postModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2"></i>Edit Listing';
-      document.getElementById('postModal').classList.remove('hidden');
-    }
-
-    function deleteItem(id) {
-      if (!confirm("Are you sure you want to delete this listing?")) return;
-
-      items = items.filter(function(i) { return i.id !== id; });
-      setStoredData('items', items);
-      showToast("Listing deleted.");
-
-      if (!document.getElementById('viewDashboard').classList.contains('hidden')) {
-        renderDashboard();
-      } else {
-        renderMarketplace();
-      }
-    }
-
-    /* ==========================================================================
-       ITEM DETAILS & COMMENTING SYSTEM
-       ========================================================================== */
-
-    function openItemDetail(itemId) {
-      activeDetailItemId = itemId;
-      var item = items.find(function(i) { return i.id === itemId; });
-      if (!item) return;
-
-      var seller = users.find(function(u) { return u.id === item.sellerId; }) || { name: 'Seller', rating: 5.0 };
-
-      document.getElementById('modalDetailImage').src = item.photo;
-      document.getElementById('modalDetailPrice').innerText = '$' + item.price;
-      document.getElementById('modalDetailTitle').innerText = item.title;
-      document.getElementById('modalDetailCategory').innerText = item.category;
-      document.getElementById('modalDetailLocation').innerText = item.location + ' • ' + item.pickup;
-      document.getElementById('modalDetailDesc').innerText = item.desc;
-
-      // Render Seller Mini Box inside modal
-      document.getElementById('modalDetailSellerBox').onclick = function() {
-        toggleItemDetailModal(false);
-        openPublicProfile(seller.id);
+      var newItem = {
+        id: 'item_' + Date.now(),
+        sellerId: currentUser.id,
+        sellerName: currentUser.name,
+        title: title,
+        price: Number(price),
+        location: location,
+        pickup: pickup,
+        photo: photo,
+        desc: desc
       };
-      document.getElementById('modalDetailSellerBox').innerHTML = `
-        <div class="flex items-center space-x-3">
-          <img src="${seller.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80'}" class="w-10 h-10 rounded-full object-cover">
-          <div>
-            <h4 class="font-bold text-sm text-slate-900">${seller.name}</h4>
-            <p class="text-xs text-slate-500">Tap to view seller profile & all listings</p>
+
+      var items = getStoredItems();
+      items.unshift(newItem);
+      saveStoredItems(items);
+
+      document.getElementById('itemForm').reset();
+      clearSelectedImage();
+      toggleModal(false);
+      renderGrid();
+      alert('Your listing is now published!');
+    }
+
+    function deleteListing(id) {
+      if (!confirm("Are you sure you want to delete this listing?")) return;
+      var items = getStoredItems().filter(function(i) { return i.id !== id; });
+      saveStoredItems(items);
+      renderGrid();
+      if (currentUser) renderDashboard();
+    }
+
+    // Grid Rendering & Filtering
+    function filterBySeller(sellerId, sellerName) {
+      activeFilterSellerId = sellerId;
+      var titleEl = document.getElementById('viewTitle');
+      var subtitleEl = document.getElementById('viewSubtitle');
+      var resetBtn = document.getElementById('resetFilterBtn');
+
+      if (sellerId) {
+        titleEl.innerText = (sellerName || "Seller") + "'s Storefront";
+        subtitleEl.innerText = "Showing items published exclusively by this seller.";
+        resetBtn.classList.remove('hidden');
+      } else {
+        titleEl.innerText = "Virtual Yard Sales Near You";
+        subtitleEl.innerText = "Browse neighborhood sales in Nederland, Groves, and West Beaumont.";
+        resetBtn.classList.add('hidden');
+      }
+      renderGrid();
+    }
+
+    function renderGrid() {
+      var grid = document.getElementById('itemsGrid');
+      var items = getStoredItems();
+
+      if (activeFilterSellerId) {
+        items = items.filter(function(i) { return i.sellerId === activeFilterSellerId; });
+      }
+
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 text-slate-400">
+            <i class="fa-solid fa-box-open text-4xl mb-2"></i>
+            <p class="text-base font-semibold">No items found.</p>
           </div>
-        </div>
-        <span class="text-amber-500 font-bold text-sm flex items-center gap-1"><i class="fa-solid fa-star"></i> ${seller.rating || 5.0}</span>
-      `;
-
-      renderItemComments(itemId);
-      toggleItemDetailModal(true);
-    }
-
-    function toggleItemDetailModal(show) {
-      var modal = document.getElementById('itemDetailModal');
-      if (show) modal.classList.remove('hidden');
-      else modal.classList.add('hidden');
-    }
-
-    function renderItemComments(itemId) {
-      var container = document.getElementById('itemCommentsList');
-      var itemComms = comments.filter(function(c) { return c.itemId === itemId; });
-
-      if (itemComms.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 italic">No questions asked yet. Post a comment below!</p>`;
+        `;
         return;
       }
-...
+
+      grid.innerHTML = items.map(function(item) {
+        var isOwner = currentUser && currentUser.id === item.sellerId;
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition">
+            <div class="relative h-48 bg-slate-100">
+              <img src="${item.photo}" alt="${item.title}" class="w-full h-full object-cover">
+              <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${item.location} • ${item.pickup}</span>
+              <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${item.price}</span>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <button onclick="openSellerProfile('${item.sellerId}', '${item.sellerName.replace(/'/g, "\\'")}', '${item.location}')" class="font-bold text-emerald-700 hover:underline flex items-center gap-1">
+                  <i class="fa-solid fa-user text-[10px]"></i> ${item.sellerName}
+                </button>
+                <span>0.5 miles away</span>
+              </div>
+              <h3 class="font-bold text-slate-900 text-lg mb-2">${item.title}</h3>
+              <p class="text-slate-600 text-sm line-clamp-2 mb-4">${item.desc}</p>
+              
+              <div class="flex gap-2">
+                <button onclick="addToBundle('${item.title.replace(/'/g, "\\'")}', ${item.price})" type="button" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                  <span>Add to Bundle Offer</span>
+                </button>
+                ${isOwner ? `
+                  <button onclick="deleteListing('${item.id}')" title="Delete listing" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 rounded-xl border border-red-200 transition">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Seller Public Profile & Reviews
+    function openSellerProfile(sellerId, sellerName, location) {
+      activeViewProfileSellerId = sellerId;
+      document.getElementById('profileName').innerText = sellerName;
+      document.getElementById('profileLocation').innerText = location + ", TX";
+      document.getElementById('profileAvatar').innerText = sellerName.charAt(0).toUpperCase();
+
+      document.getElementById('filterSellerItemsBtn').onclick = function() {
+        toggleElement('sellerProfileModal', false);
+        filterBySeller(sellerId, sellerName);
+      };
+
+      renderReviews(sellerId);
+      toggleElement('sellerProfileModal', true);
+    }
+
+    function renderReviews(sellerId) {
+      var allReviews = getStoredReviews();
+      var reviews = allReviews[sellerId] || [];
+      var container = document.getElementById('reviewsContainer');
+
+      if (reviews.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-3">No reviews yet for this seller.</p>';
+        return;
+      }
+
+      container.innerHTML = reviews.map(function(r) {
+        var stars = '⭐'.repeat(r.rating);
+        return `
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-800">${r.author}</span>
+              <span>${stars}</span>
+            </div>
+            <p class="text-slate-600">${r.comment}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleReviewSubmit(e) {
+      e.preventDefault();
+      if (!activeViewProfileSellerId) return;
+
+      var rating = Number(document.getElementById('reviewRating').value);
+      var comment = document.getElementById('reviewComment').value.trim();
+      var author = currentUser ? currentUser.name : "Local Neighbor";
+
+      var allReviews = getStoredReviews();
+      if (!allReviews[activeViewProfileSellerId]) {
+        allReviews[activeViewProfileSellerId] = [];
+      }
+
+      allReviews[activeViewProfileSellerId].unshift({
+        rating: rating,
+        comment: comment,
+        author: author,
+        date: Date.now()
+      });
+
+      saveStoredReviews(allReviews);
+      document.getElementById('reviewComment').value = "";
+      renderReviews(activeViewProfileSellerId);
+      alert("Thank you! Your review has been published.");
+    }
+
+    // Bundle Logic
+    function addToBundle(title, price) {
+      bundle.push({ title: title, price: price });
+      document.getElementById('cartBadge').innerText = bundle.length;
+      alert('Added "' + title + '" ($' + price + ') to your bundle!');
+    }
+
+    function viewBundle() {
+      if (bundle.length === 0) {
+        alert('Your bundle is empty! Tap "Add to Bundle Offer" on items first.');
+      } else {
+        var itemsList = bundle.map(function(item) {
+          return '• ' + item.title + ' ($' + item.price + ')';
+        }).join('\n');
+        var total = bundle.reduce(function(sum, item) { return sum + item.price; }, 0);
+        var discount = Math.round(total * 0.85);
+        alert('Your Selected Bundle Items:\n\n' + itemsList + '\n\nTotal: $' + total + '\nSuggested Package Offer:$' + discount);
+      }
+    }
+
+    // Page Initialization
+    window.addEventListener('DOMContentLoaded', function() {
+      var savedUser = localStorage.getItem('yardsale_current_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        updateNavUser();
+      }
+      renderGrid();
+    });
+  </script>
+</body>
+</html>
