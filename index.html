@@ -3,31 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YardSale Hub - Neighborhood Garage Sale Marketplace</title>
+  <title>YardSale Hub - Neighborhood Marketplace</title>
   
-  <!-- PWA Meta Tags & Manifest -->
-  <meta name="theme-color" content="#059669">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="YardSale Hub">
-
-  <!-- Inline Web App Manifest -->
-  <link rel="manifest" href='data:application/manifest+json,{
-    "name": "YardSale Hub Marketplace",
-    "short_name": "YardSale Hub",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#f8fafc",
-    "theme_color": "#059669",
-    "icons": [
-      {
-        "src": "https://cdn-icons-png.flaticon.com/512/1170/1170576.png",
-        "sizes": "512x512",
-        "type": "image/png"
-      }
-    ]
-  }'>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -36,29 +13,6 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 md:pb-0">
-
-  <!-- PWA Install Banner -->
-  <div id="pwaBanner" class="hidden bg-emerald-900 text-white px-4 py-3 border-b border-emerald-700 shadow-lg">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="bg-emerald-600 p-2 rounded-lg text-white">
-          <i class="fa-solid fa-mobile-screen-button text-lg"></i>
-        </div>
-        <div>
-          <p class="text-sm font-semibold leading-tight">Add YardSale Hub to Home Screen</p>
-          <p class="text-xs text-emerald-200">Instant access just like a native app—no app store required.</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button id="installPwaBtn" class="bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow transition">
-          Install
-        </button>
-        <button onclick="document.getElementById('pwaBanner').classList.add('hidden')" class="text-emerald-300 hover:text-white px-2 py-1 text-xs">
-          Dismiss
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- Header / Navigation -->
   <header class="bg-emerald-600 text-white shadow-md sticky top-0 z-40">
@@ -73,12 +27,12 @@
         </div>
       </div>
       <div class="flex items-center space-x-3">
-        <!-- TRIGGER BUTTON -->
-        <button id="openModalBtn" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow cursor-pointer">
+        <!-- TOP LIST ITEM BUTTON WITH DIRECT ONCLICK -->
+        <button onclick="toggleModal(true)" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow cursor-pointer active:scale-95">
           <i class="fa-solid fa-plus"></i>
           <span>List Item</span>
         </button>
-        <button id="cartBtn" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
+        <button onclick="viewBundle()" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
           <i class="fa-solid fa-basket-shopping"></i>
           <span class="hidden sm:inline">Bundle</span>
           <span id="cartBadge" class="bg-amber-400 text-slate-900 font-bold rounded-full text-xs w-5 h-5 flex items-center justify-center">0</span>
@@ -96,10 +50,10 @@
           <p class="text-slate-600 text-sm mt-1">Browse neighborhood sales in Nederland, Groves, and West Beaumont.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm transition">All Items</button>
-          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200 transition">Furniture</button>
-          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200 transition">Electronics</button>
-          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200 transition">Tools & Lawn</button>
+          <button class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm">All Items</button>
+          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Furniture</button>
+          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Electronics</button>
+          <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200">Tools & Lawn</button>
         </div>
       </div>
     </div>
@@ -122,8 +76,8 @@
             <span>2.1 miles away</span>
           </div>
           <h3 class="font-bold text-slate-900 text-lg mb-2">Vintage Sofa Couch</h3>
-          <p class="text-slate-600 text-sm line-clamp-2 mb-4">Great condition, solid wooden frame with retro green fabric. Moving out sale!</p>
-          <button onclick="addToBundle('Vintage Sofa Couch', 45, 'Nederland')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
+          <p class="text-slate-600 text-sm line-clamp-2 mb-4">Great condition, solid wooden frame with retro green fabric.</p>
+          <button onclick="addToBundle('Vintage Sofa Couch', 45)" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>Add to Bundle Offer</span>
           </button>
@@ -143,8 +97,8 @@
             <span>3.4 miles away</span>
           </div>
           <h3 class="font-bold text-slate-900 text-lg mb-2">Wireless Headphones</h3>
-          <p class="text-slate-600 text-sm line-clamp-2 mb-4">Barely used, includes original charging case and cable. Works great!</p>
-          <button onclick="addToBundle('Wireless Headphones', 20, 'Groves')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
+          <p class="text-slate-600 text-sm line-clamp-2 mb-4">Barely used, includes original charging case and cable.</p>
+          <button onclick="addToBundle('Wireless Headphones', 20)" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>Add to Bundle Offer</span>
           </button>
@@ -154,24 +108,24 @@
     </div>
   </main>
 
-  <!-- Floating Mobile "Sell Item" Action Button -->
-  <button id="floatingModalBtn" type="button" class="md:hidden fixed bottom-5 right-5 bg-emerald-600 text-white font-bold px-4 py-3.5 rounded-full shadow-2xl flex items-center space-x-2 z-30 active:scale-95 transition cursor-pointer">
-    <i class="fa-solid fa-camera text-lg"></i>
-    <span>Sell Item</span>
+  <!-- FLOATING ACTION BUTTON WITH DIRECT ONCLICK -->
+  <button onclick="toggleModal(true)" type="button" class="md:hidden fixed bottom-6 right-6 bg-emerald-600 text-white font-bold px-5 py-4 rounded-full shadow-2xl flex items-center space-x-2 z-50 active:scale-95 transition cursor-pointer">
+    <i class="fa-solid fa-camera text-xl"></i>
+    <span class="text-base">Sell Item</span>
   </button>
 
   <!-- Seller Item Upload Modal -->
-  <div id="sellerModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+  <div id="sellerModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="handleOverlayClick(event)">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
       
       <!-- Modal Header -->
       <div class="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
         <h3 class="font-bold text-lg"><i class="fa-solid fa-tag mr-2"></i>Post an Item for Sale</h3>
-        <button id="closeModalBtn" type="button" class="text-emerald-100 hover:text-white text-2xl font-bold cursor-pointer">&times;</button>
+        <button onclick="toggleModal(false)" type="button" class="text-emerald-100 hover:text-white text-2xl font-bold cursor-pointer px-2">&times;</button>
       </div>
 
       <!-- Modal Form Body -->
-      <form id="itemForm" class="p-6 overflow-y-auto space-y-4 text-sm flex-1">
+      <form id="itemForm" onsubmit="handleFormSubmit(event)" class="p-6 overflow-y-auto space-y-4 text-sm flex-1">
         
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Item Title *</label>
@@ -206,160 +160,108 @@
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Photo URL *</label>
           <input type="url" id="itemPhoto" required placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          <p class="text-[11px] text-slate-500 mt-1">Paste an image URL or tap a sample photo below:</p>
+          <p class="text-[11px] text-slate-500 mt-1">Tap a sample photo below to quick-fill:</p>
           
           <div class="flex gap-2 mt-2">
-            <button type="button" class="sample-photo-btn text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 cursor-pointer" data-url="https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80">Tool Box</button>
-            <button type="button" class="sample-photo-btn text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 cursor-pointer" data-url="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80">Chair</button>
-            <button type="button" class="sample-photo-btn text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300 cursor-pointer" data-url="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80">Bicycle</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
           </div>
         </div>
 
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Item Description</label>
-          <textarea id="itemDesc" rows="2" placeholder="Describe condition, dimensions, or reasons for selling..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+          <textarea id="itemDesc" rows="2" placeholder="Describe condition or pickup terms..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
         </div>
 
         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow mt-2 cursor-pointer">
-          Publish Listing to YardSale Hub
+          Publish Listing
         </button>
       </form>
 
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 text-center text-sm">
-      <p class="font-medium text-slate-300">YardSale Hub • Mid-County Pilot Edition</p>
-      <p class="mt-1 text-xs text-slate-500">Connecting buyers and garage sale hosts in Nederland, Groves & Orange County.</p>
-    </div>
-  </footer>
-
-  <!-- Application Logic -->
+  <!-- Global Application Logic -->
   <script>
     let bundle = [];
 
-    function addToBundle(title, price, location) {
-      bundle.push({ title, price, location });
-      document.getElementById('cartBadge').innerText = bundle.length;
-      alert(Added "${title}" to your bundle offer!);
+    // Global Functions directly accessible by onclick attributes
+    function toggleModal(show) {
+      const modal = document.getElementById('sellerModal');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
     }
 
-    document.getElementById('cartBtn').addEventListener('click', () => {
+    function handleOverlayClick(e) {
+      if (e.target.id === 'sellerModal') {
+        toggleModal(false);
+      }
+    }
+
+    function setPhoto(url) {
+      document.getElementById('itemPhoto').value = url;
+    }
+
+    function addToBundle(title, price) {
+      bundle.push({ title, price });
+      document.getElementById('cartBadge').innerText = bundle.length;
+      alert(Added "${title}" ($${price}) to your bundle!);
+    }
+
+    function viewBundle() {
       if (bundle.length === 0) {
-        alert('Your bundle is empty! Add items from neighborhood sales first.');
+        alert('Your bundle is empty! Tap "Add to Bundle Offer" on items first.');
       } else {
         let itemsList = bundle.map(item => • ${item.title} ($${item.price})).join('\n');
         let total = bundle.reduce((sum, item) => sum + item.price, 0);
-        let suggestedDiscount = Math.round(total * 0.85);
-        alert(Your Selected Bundle Items:\n\n${itemsList}\n\nList Total: $${total}\nSuggested Package Offer: $${suggestedDiscount});
+        let discount = Math.round(total * 0.85);
+        alert(Your Selected Bundle Items:\n\n${itemsList}\n\nTotal: $${total}\nSuggested Package Offer: $${discount});
       }
-    });
-
-    // DOM Modal Logic
-    document.addEventListener('DOMContentLoaded', () => {
-      const modal = document.getElementById('sellerModal');
-      const openBtn = document.getElementById('openModalBtn');
-      const floatBtn = document.getElementById('floatingModalBtn');
-      const closeBtn = document.getElementById('closeModalBtn');
-      const itemForm = document.getElementById('itemForm');
-
-      const showModal = () => modal.classList.remove('hidden');
-      const hideModal = () => modal.classList.add('hidden');
-
-      if (openBtn) openBtn.addEventListener('click', showModal);
-      if (floatBtn) floatBtn.addEventListener('click', showModal);
-      if (closeBtn) closeBtn.addEventListener('click', hideModal);
-
-      // Close modal when clicking dark overlay outside form
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) hideModal();
-      });
-
-      // Preset photo buttons
-      document.querySelectorAll('.sample-photo-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.getElementById('itemPhoto').value = e.target.getAttribute('data-url');
-        });
-      });
-
-      // Submit new item listing
-      itemForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const title = document.getElementById('itemTitle').value;
-        const price = document.getElementById('itemPrice').value;
-        const location = document.getElementById('itemLocation').value;
-        const pickup = document.getElementById('pickupType').value;
-        const photo = document.getElementById('itemPhoto').value;
-        const desc = document.getElementById('itemDesc').value || 'Available for immediate local pickup.';
-
-        const newCard = document.createElement('div');
-        newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
-        newCard.innerHTML = `
-          <div class="relative h-48 bg-slate-100">
-            <img src="${photo}" alt="${title}" class="w-full h-full object-cover">
-            <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${location} • ${pickup}</span>
-            <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${price}</span>
-            <span class="absolute bottom-3 left-3 bg-amber-400 text-slate-900 font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shadow">Just Listed</span>
-          </div>
-          <div class="p-5">
-            <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-              <span>Neighborhood Host Sale</span>
-              <span>0.5 miles away</span>
-            </div>
-            <h3 class="font-bold text-slate-900 text-lg mb-2">${title}</h3>
-            <p class="text-slate-600 text-sm line-clamp-2 mb-4">${desc}</p>
-            <button onclick="addToBundle('${title}', ${price}, '${location}')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
-              <i class="fa-solid fa-plus text-xs"></i>
-              <span>Add to Bundle Offer</span>
-            </button>
-          </div>
-        `;
-
-        const grid = document.getElementById('itemsGrid');
-        grid.insertBefore(newCard, grid.firstChild);
-
-        itemForm.reset();
-        hideModal();
-        alert('Your item has been published to the neighborhood marketplace!');
-      });
-    });
-
-    // PWA Service Worker
-    let deferredPrompt;
-    const pwaBanner = document.getElementById('pwaBanner');
-    const installPwaBtn = document.getElementById('installPwaBtn');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      pwaBanner.classList.remove('hidden');
-    });
-
-    if (installPwaBtn) {
-      installPwaBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') {
-            console.log('PWA installed');
-          }
-          deferredPrompt = null;
-          pwaBanner.classList.add('hidden');
-        }
-      });
     }
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        const swBlob = new Blob([
-          self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request)); });
-        ], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
-        navigator.serviceWorker.register(swUrl).catch(err => console.log('SW bypass', err));
-      });
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const title = document.getElementById('itemTitle').value;
+      const price = document.getElementById('itemPrice').value;
+      const location = document.getElementById('itemLocation').value;
+      const pickup = document.getElementById('pickupType').value;
+      const photo = document.getElementById('itemPhoto').value;
+      const desc = document.getElementById('itemDesc').value || 'Available for local pickup.';
+
+      const newCard = document.createElement('div');
+      newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
+      newCard.innerHTML = `
+        <div class="relative h-48 bg-slate-100">
+          <img src="${photo}" alt="${title}" class="w-full h-full object-cover">
+          <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${location} • ${pickup}</span>
+          <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${price}</span>
+          <span class="absolute bottom-3 left-3 bg-amber-400 text-slate-900 font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shadow">Just Listed</span>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span>Neighborhood Host Sale</span>
+            <span>0.5 miles away</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-lg mb-2">${title}</h3>
+          <p class="text-slate-600 text-sm line-clamp-2 mb-4">${desc}</p>
+          <button onclick="addToBundle('${title}', ${price})" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>Add to Bundle Offer</span>
+          </button>
+        </div>
+      `;
+
+      const grid = document.getElementById('itemsGrid');
+      grid.insertBefore(newCard, grid.firstChild);
+
+      document.getElementById('itemForm').reset();
+      toggleModal(false);
+      alert('Your item has been published to the neighborhood marketplace!');
     }
   </script>
 </body>
