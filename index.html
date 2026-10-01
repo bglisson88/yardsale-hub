@@ -4,17 +4,61 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YardSale Hub - Neighborhood Garage Sale Marketplace</title>
+  
+  <!-- PWA Meta Tags & Manifest -->
+  <meta name="theme-color" content="#059669">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="YardSale Hub">
+
+  <!-- Inline Web App Manifest (Data URL for single-file deployment) -->
+  <link rel="manifest" href='data:application/manifest+json,{
+    "name": "YardSale Hub Marketplace",
+    "short_name": "YardSale Hub",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#059669",
+    "icons": [
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/1170/1170576.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }'>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-16 md:pb-0">
+
+  <!-- PWA Install Banner (Prompts mobile users) -->
+  <div id="pwaBanner" class="hidden bg-emerald-900 text-white px-4 py-3 border-b border-emerald-700 shadow-lg">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-emerald-600 p-2 rounded-lg text-white">
+          <i class="fa-solid fa-mobile-screen-button text-lg"></i>
+        </div>
+        <div>
+          <p class="text-sm font-semibold leading-tight">Add YardSale Hub to Home Screen</p>
+          <p class="text-xs text-emerald-200">Instant access just like a native app—no app store required.</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="installPwaBtn" class="bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow transition">
+          Install
+        </button>
+        <button onclick="document.getElementById('pwaBanner').classList.add('hidden')" class="text-emerald-300 hover:text-white px-2 py-1 text-xs">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Header / Navigation -->
   <header class="bg-emerald-600 text-white shadow-md sticky top-0 z-50">
@@ -47,7 +91,7 @@
           <p class="text-slate-600 text-sm mt-1">Browse neighborhood sales in Nederland, Groves, and West Beaumont.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-emerald-200 transition">All Items</button>
+          <button class="bg-emerald-100 text-emerald-800 font-semibold px-4 py-2 rounded-lg text-sm transition">All Items</button>
           <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200 transition">Furniture</button>
           <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200 transition">Electronics</button>
           <button class="bg-slate-100 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-slate-200 transition">Tools & Lawn</button>
@@ -135,7 +179,7 @@
     </div>
   </footer>
 
-  <!-- Simple Cart / Bundle Modal JavaScript -->
+  <!-- Application Logic & PWA Script -->
   <script>
     let bundle = [];
 
@@ -151,10 +195,44 @@
       } else {
         let itemsList = bundle.map(item => • ${item.title} ($${item.price})).join('\n');
         let total = bundle.reduce((sum, item) => sum + item.price, 0);
-        let suggestedDiscount = Math.round(total * 0.85); // 15% bundle discount suggestion
+        let suggestedDiscount = Math.round(total * 0.85);
         alert(Your Selected Bundle Items:\n\n${itemsList}\n\nList Total: $${total}\nSuggested Package Offer: $${suggestedDiscount});
       }
     });
+
+    // PWA Install Prompt Capture
+    let deferredPrompt;
+    const pwaBanner = document.getElementById('pwaBanner');
+    const installPwaBtn = document.getElementById('installPwaBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      pwaBanner.classList.remove('hidden');
+    });
+
+    installPwaBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('User accepted the PWA install prompt');
+        }
+        deferredPrompt = null;
+        pwaBanner.classList.add('hidden');
+      }
+    });
+
+    // Dummy Service Worker Registration (Required for PWA eligibility)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swBlob = new Blob([
+          self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request)); });
+        ], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration bypass', err));
+      });
+    }
   </script>
 </body>
 </html>
