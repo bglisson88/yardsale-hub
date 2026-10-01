@@ -26,12 +26,20 @@
           <p class="text-xs text-emerald-100 font-medium">Mid-County & Orange County Pilot</p>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- MY LISTINGS BUTTON -->
+        <button onclick="toggleMyListingsDrawer(true)" type="button" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition flex items-center space-x-1.5 cursor-pointer">
+          <i class="fa-solid fa-user-gear"></i>
+          <span class="hidden sm:inline">My Listings</span>
+          <span id="myListingsBadge" class="bg-emerald-900 text-white font-bold rounded-full text-[10px] px-1.5 py-0.5">0</span>
+        </button>
+
         <!-- TOP LIST ITEM BUTTON -->
         <button onclick="toggleModal(true)" type="button" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition flex items-center space-x-1.5 shadow cursor-pointer active:scale-95">
           <i class="fa-solid fa-plus"></i>
           <span>List Item</span>
         </button>
+
         <button onclick="viewBundle()" type="button" class="relative bg-emerald-700 hover:bg-emerald-800 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
           <i class="fa-solid fa-basket-shopping"></i>
           <span class="hidden sm:inline">Bundle</span>
@@ -114,6 +122,23 @@
     <span class="text-base">Sell Item</span>
   </button>
 
+  <!-- SELLER HUB / MY LISTINGS DRAWER -->
+  <div id="myListingsOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 transition-opacity" onclick="toggleMyListingsDrawer(false)">
+    <div class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col p-6 overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+        <div>
+          <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-user-gear text-emerald-600 mr-2"></i>My Seller Hub</h3>
+          <p class="text-xs text-slate-500">Manage items posted from this device</p>
+        </div>
+        <button onclick="toggleMyListingsDrawer(false)" type="button" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
+      </div>
+
+      <div id="myListingsContainer" class="space-y-3 flex-1">
+        <!-- Dynamically rendered via JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- Seller Item Upload Modal -->
   <div id="sellerModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="handleOverlayClick(event)">
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
@@ -157,35 +182,30 @@
           </select>
         </div>
 
-        <!-- DIRECT FILE UPLOAD SECTION -->
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Item Photo *</label>
           
-          <!-- Hidden Input for Store Data URL -->
-          <input type="hidden" id="itemPhotoData" value="">
-
-          <!-- File Upload Zone -->
-          <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50 rounded-xl p-4 text-center cursor-pointer transition relative" id="uploadDropzone">
-            <input type="file" id="photoFileInput" accept="image/*" onchange="handleFileSelect(event)" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10">
-            <div id="uploadPlaceholder" class="flex flex-col items-center justify-center space-y-1">
-              <i class="fa-solid fa-cloud-arrow-up text-emerald-600 text-2xl mb-1"></i>
-              <p class="text-sm font-semibold text-emerald-900">Tap to upload photo or snap picture</p>
-              <p class="text-xs text-slate-500">JPG, PNG, WEBP from phone camera or gallery</p>
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-emerald-500 transition bg-slate-50 cursor-pointer relative mb-3">
+            <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageFileSelect(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div id="uploadPrompt" class="space-y-1">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl text-emerald-600"></i>
+              <p class="text-xs font-semibold text-slate-700">Tap to upload photo or take picture</p>
+              <p class="text-[10px] text-slate-400">JPG, PNG, or WEBP from gallery or camera</p>
             </div>
-            <!-- Image Preview Box -->
-            <div id="imagePreviewContainer" class="hidden relative w-full h-40 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
-              <img id="imagePreview" src="" alt="Upload Preview" class="w-full h-full object-cover">
-              <button type="button" onclick="clearSelectedPhoto(event)" class="absolute top-2 right-2 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full p-1.5 text-xs shadow z-20">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
+            <div id="imagePreviewContainer" class="hidden relative">
+              <img id="imagePreview" src="" alt="Preview" class="max-h-36 mx-auto rounded-lg object-cover shadow-sm">
+              <button type="button" onclick="clearSelectedImage(event)" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold z-20 shadow">&times;</button>
             </div>
           </div>
 
-          <p class="text-[11px] text-slate-500 mt-2">Or choose a preset demo image:</p>
-          <div class="flex gap-2 mt-1">
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
-            <button type="button" onclick="setPresetPhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
+          <p class="text-xs text-center text-slate-400 mb-2">— OR —</p>
+          
+          <input type="url" id="itemPhoto" placeholder="Paste Photo Image URL (Optional)" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs">
+          
+          <div class="flex gap-2 mt-2">
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Tool Box</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Chair</button>
+            <button type="button" onclick="setPhoto('https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border border-slate-300">Bicycle</button>
           </div>
         </div>
 
@@ -205,6 +225,22 @@
   <!-- JavaScript Logic -->
   <script>
     var bundle = [];
+    var uploadedImageBase64 = "";
+
+    // Load seller items saved in local browser storage
+    function getMyListings() {
+      return JSON.parse(localStorage.getItem('my_yardsale_items') || '[]');
+    }
+
+    function saveMyListings(items) {
+      localStorage.setItem('my_yardsale_items', JSON.stringify(items));
+      updateMyListingsBadge();
+    }
+
+    function updateMyListingsBadge() {
+      var badge = document.getElementById('myListingsBadge');
+      if (badge) badge.innerText = getMyListings().length;
+    }
 
     function toggleModal(show) {
       var modal = document.getElementById('sellerModal');
@@ -216,44 +252,50 @@
       }
     }
 
+    function toggleMyListingsDrawer(show) {
+      var drawer = document.getElementById('myListingsOverlay');
+      if (!drawer) return;
+      if (show) {
+        renderMyListingsDrawer();
+        drawer.classList.remove('hidden');
+      } else {
+        drawer.classList.add('hidden');
+      }
+    }
+
     function handleOverlayClick(e) {
       if (e.target.id === 'sellerModal') {
         toggleModal(false);
       }
     }
 
-    // Handles Direct File Upload from Device Gallery / Camera
-    function handleFileSelect(event) {
-      const file = event.target.files[0];
+    function handleImageFileSelect(e) {
+      var file = e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const dataUrl = e.target.result;
-        showPhotoPreview(dataUrl);
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedImageBase64 = event.target.result;
+        document.getElementById('imagePreview').src = uploadedImageBase64;
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('imagePreviewContainer').classList.remove('hidden');
       };
       reader.readAsDataURL(file);
     }
 
-    // Sets preset sample image
-    function setPresetPhoto(url) {
-      showPhotoPreview(url);
-    }
-
-    function showPhotoPreview(url) {
-      document.getElementById('itemPhotoData').value = url;
-      document.getElementById('imagePreview').src = url;
-      document.getElementById('uploadPlaceholder').classList.add('hidden');
-      document.getElementById('imagePreviewContainer').classList.remove('hidden');
-    }
-
-    function clearSelectedPhoto(e) {
+    function clearSelectedImage(e) {
       if (e) e.stopPropagation();
-      document.getElementById('itemPhotoData').value = '';
-      document.getElementById('photoFileInput').value = '';
-      document.getElementById('imagePreview').src = '';
-      document.getElementById('uploadPlaceholder').classList.remove('hidden');
+      uploadedImageBase64 = "";
+      document.getElementById('imageFileInput').value = "";
+      document.getElementById('imagePreview').src = "";
+      document.getElementById('uploadPrompt').classList.remove('hidden');
       document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+
+    function setPhoto(url) {
+      clearSelectedImage();
+      var input = document.getElementById('itemPhoto');
+      if (input) input.value = url;
     }
 
     function addToBundle(title, price) {
@@ -278,6 +320,87 @@
       }
     }
 
+    function deleteItem(id) {
+      if (!confirm("Are you sure you want to remove this listing?")) return;
+
+      // Remove from LocalStorage
+      var items = getMyListings().filter(function(item) { return item.id !== id; });
+      saveMyListings(items);
+
+      // Remove card from UI
+      var card = document.getElementById('card-' + id);
+      if (card) card.remove();
+
+      renderMyListingsDrawer();
+    }
+
+    function renderMyListingsDrawer() {
+      var container = document.getElementById('myListingsContainer');
+      var myListings = getMyListings();
+
+      if (myListings.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-slate-400">
+            <i class="fa-solid fa-box-open text-4xl mb-2"></i>
+            <p class="text-sm">You haven't posted any items from this device yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = myListings.map(function(item) {
+        return `
+          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center space-x-3 overflow-hidden">
+              <img src="${item.photo}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
+              <div class="truncate">
+                <p class="font-bold text-sm text-slate-800 truncate">${item.title}</p>
+                <p class="text-xs text-slate-500">$${item.price} • ${item.location}</p>
+              </div>
+            </div>
+            <button onclick="deleteItem('${item.id}')" type="button" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg text-xs font-semibold transition cursor-pointer flex-shrink-0 ml-2">
+              <i class="fa-solid fa-trash-can mr-1"></i> Delete
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCard(item, isNew) {
+      var card = document.createElement('div');
+      card.id = 'card-' + item.id;
+      card.className = "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition relative group";
+      
+      var badgeText = isNew ? "Just Listed" : item.pickup;
+
+      card.innerHTML = `
+        <div class="relative h-48 bg-slate-100">
+          <img src="${item.photo}" alt="${item.title}" class="w-full h-full object-cover">
+          <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${item.location} • ${item.pickup}</span>
+          <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${item.price}</span>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span>Neighborhood Host Sale</span>
+            <span>0.5 miles away</span>
+          </div>
+          <h3 class="font-bold text-slate-900 text-lg mb-2">${item.title}</h3>
+          <p class="text-slate-600 text-sm line-clamp-2 mb-4">${item.desc}</p>
+          <div class="flex gap-2">
+            <button onclick="addToBundle('${item.title.replace(/'/g, "\\'")}', ${item.price})" type="button" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>Add to Bundle</span>
+            </button>
+            <button onclick="deleteItem('${item.id}')" type="button" title="Delete listing" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2.5 rounded-xl transition flex items-center justify-center text-sm cursor-pointer border border-red-200">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
     function handleFormSubmit(e) {
       e.preventDefault();
 
@@ -285,45 +408,52 @@
       var price = document.getElementById('itemPrice').value;
       var location = document.getElementById('itemLocation').value;
       var pickup = document.getElementById('pickupType').value;
-      var photo = document.getElementById('itemPhotoData').value;
+      var photoUrlInput = document.getElementById('itemPhoto').value;
+      var photo = uploadedImageBase64 || photoUrlInput || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
       var desc = document.getElementById('itemDesc').value || 'Available for local pickup.';
 
-      if (!photo) {
-        alert('Please choose or upload a photo for your listing!');
-        return;
+      var newItem = {
+        id: 'item_' + Date.now(),
+        title: title,
+        price: price,
+        location: location,
+        pickup: pickup,
+        photo: photo,
+        desc: desc
+      };
+
+      // Save locally
+      var myListings = getMyListings();
+      myListings.unshift(newItem);
+      saveMyListings(myListings);
+
+      // Render to marketplace grid
+      var grid = document.getElementById('itemsGrid');
+      if (grid) {
+        var card = renderCard(newItem, true);
+        grid.insertBefore(card, grid.firstChild);
       }
 
-      var newCard = document.createElement('div');
-      newCard.className = "bg-white rounded-2xl border border-emerald-300 shadow-md overflow-hidden transition ring-2 ring-emerald-500/20";
-      newCard.innerHTML = `
-        <div class="relative h-48 bg-slate-100">
-          <img src="${photo}" alt="${title}" class="w-full h-full object-cover">
-          <span class="absolute top-3 left-3 bg-emerald-600 text-white font-semibold text-xs px-2.5 py-1 rounded-md shadow-sm">${location} • ${pickup}</span>
-          <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 font-bold text-sm px-2.5 py-1 rounded-md shadow-sm">$${price}</span>
-          <span class="absolute bottom-3 left-3 bg-amber-400 text-slate-900 font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shadow">Just Listed</span>
-        </div>
-        <div class="p-5">
-          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-            <span>Neighborhood Host Sale</span>
-            <span>0.5 miles away</span>
-          </div>
-          <h3 class="font-bold text-slate-900 text-lg mb-2">${title}</h3>
-          <p class="text-slate-600 text-sm line-clamp-2 mb-4">${desc}</p>
-          <button onclick="addToBundle('${title.replace(/'/g, "\\'")}', ${price})" type="button" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
-            <i class="fa-solid fa-plus text-xs"></i>
-            <span>Add to Bundle Offer</span>
-          </button>
-        </div>
-      `;
-
-      var grid = document.getElementById('itemsGrid');
-      if (grid) grid.insertBefore(newCard, grid.firstChild);
-
+      // Reset Form & Close Modal
       document.getElementById('itemForm').reset();
-      clearSelectedPhoto();
+      clearSelectedImage();
       toggleModal(false);
-      alert('Your item has been published to the neighborhood marketplace!');
+      alert('Your item has been published! You can manage or delete it anytime under "My Listings".');
     }
+
+    // Load any existing items saved on this browser when the page loads
+    window.addEventListener('DOMContentLoaded', function() {
+      updateMyListingsBadge();
+      var myListings = getMyListings();
+      var grid = document.getElementById('itemsGrid');
+      
+      if (grid && myListings.length > 0) {
+        myListings.forEach(function(item) {
+          var card = renderCard(item, false);
+          grid.insertBefore(card, grid.firstChild);
+        });
+      }
+    });
   </script>
 </body>
 </html>
