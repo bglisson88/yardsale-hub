@@ -184,46 +184,50 @@
 
   <!-- Global Application Logic -->
   <script>
-    let bundle = [];
+    // Explicitly define global state
+    window.bundle = [];
 
-    // Global Functions directly accessible by onclick attributes
-    function toggleModal(show) {
+    // Explicitly bind functions to the global window object
+    window.toggleModal = function(show) {
       const modal = document.getElementById('sellerModal');
+      if (!modal) return;
       if (show) {
         modal.classList.remove('hidden');
       } else {
         modal.classList.add('hidden');
       }
-    }
+    };
 
-    function handleOverlayClick(e) {
+    window.handleOverlayClick = function(e) {
       if (e.target.id === 'sellerModal') {
-        toggleModal(false);
+        window.toggleModal(false);
       }
-    }
+    };
 
-    function setPhoto(url) {
-      document.getElementById('itemPhoto').value = url;
-    }
+    window.setPhoto = function(url) {
+      const input = document.getElementById('itemPhoto');
+      if (input) input.value = url;
+    };
 
-    function addToBundle(title, price) {
-      bundle.push({ title, price });
-      document.getElementById('cartBadge').innerText = bundle.length;
+    window.addToBundle = function(title, price) {
+      window.bundle.push({ title, price });
+      const badge = document.getElementById('cartBadge');
+      if (badge) badge.innerText = window.bundle.length;
       alert(Added "${title}" ($${price}) to your bundle!);
-    }
+    };
 
-    function viewBundle() {
-      if (bundle.length === 0) {
+    window.viewBundle = function() {
+      if (window.bundle.length === 0) {
         alert('Your bundle is empty! Tap "Add to Bundle Offer" on items first.');
       } else {
-        let itemsList = bundle.map(item => • ${item.title} ($${item.price})).join('\n');
-        let total = bundle.reduce((sum, item) => sum + item.price, 0);
+        let itemsList = window.bundle.map(item => • ${item.title} ($${item.price})).join('\n');
+        let total = window.bundle.reduce((sum, item) => sum + item.price, 0);
         let discount = Math.round(total * 0.85);
         alert(Your Selected Bundle Items:\n\n${itemsList}\n\nTotal: $${total}\nSuggested Package Offer: $${discount});
       }
-    }
+    };
 
-    function handleFormSubmit(e) {
+    window.handleFormSubmit = function(e) {
       e.preventDefault();
 
       const title = document.getElementById('itemTitle').value;
@@ -257,12 +261,10 @@
       `;
 
       const grid = document.getElementById('itemsGrid');
-      grid.insertBefore(newCard, grid.firstChild);
+      if (grid) grid.insertBefore(newCard, grid.firstChild);
 
       document.getElementById('itemForm').reset();
-      toggleModal(false);
+      window.toggleModal(false);
       alert('Your item has been published to the neighborhood marketplace!');
-    }
+    };
   </script>
-</body>
-</html>
